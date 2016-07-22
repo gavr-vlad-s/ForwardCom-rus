@@ -1,0 +1,265 @@
+\documentclass[10pt]{report}
+
+% \usepackage[utf8]{inputenc}
+\usepackage[utf8x]{inputenc}
+\usepackage{hyperref}
+%\usepackage{graphicx}
+%\usepackage{float}
+\usepackage[russian]{babel}
+%\usepackage{listings}
+%\lstset{inputencoding=utf8,extendedchars=false,keepspaces=true} %,language=C++
+
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{ccaption}
+\usepackage{verbatim}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{indentfirst}
+\usepackage{subfiles}
+\usepackage{syntax}
+\usepackage{bytefield}
+
+
+
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+
+\usepackage[dvipsnames,usenames]{color}
+\usepackage{hyperref}
+\hypersetup{unicode,breaklinks=true}
+%\usepackage{tikz}
+%\usetikzlibrary{arrows,decorations.pathmorphing,backgrounds,positioning,fit,petri,calc,shapes.misc,shapes.geometric}
+%\usepackage{minted}
+
+\textheight 24.0cm
+\textwidth 16.5cm
+
+\voffset -2cm
+\hoffset .0cm
+\oddsidemargin 0.5mm
+\evensidemargin 0.5mm
+\topmargin -0.4mm
+\righthyphenmin=2
+\hfuzz=12.7pt
+\makeatletter
+%\renewcommand\section{\@startsection {section}{1}{\z@}%
+%                                   {3.5ex \@plus 1ex \@minus .2ex}%
+%                                   {2.3ex \@plus.2ex}%
+%                                   {\normalfont\Large\bfseries}}
+%\renewcommand{\thesection}{\arabic{section}}
+\@addtoreset{equation}{section}
+\@addtoreset{figure}{section}
+\@addtoreset{table}{section}
+
+\newlength{\chaprule}
+\newlength{\ATchapskip}
+\setlength{\chaprule}{0.4\p@} \setlength{\ATchapskip}{10\p@} \advance \ATchapskip by -1\chaprule
+\renewcommand{\@makechapterhead}[1]{%
+	\ifdim\chaprule>6\p@ \setlength{\chaprule}{6\p@}\fi
+	\vspace*{\ATchapskip}%
+	%\noindent\rule{\textwidth}{\chaprule}\par%
+	%\vskip 10\p@
+	{\parindent \z@ \normalfont \ifnum \c@secnumdepth >\m@ne {\huge\bfseries \@chapapp\space \thechapter.}
+		%\par\nobreak
+		%\vskip 8\p@
+		\fi \interlinepenalty\@M \huge\bfseries #1\par\nobreak \vskip 10\p@
+		%\noindent\rule{\textwidth}{\chaprule}\par%
+		\vskip\ATchapskip }}
+
+%\@addtoreset{lstlisting}{section}
+\makeatother
+
+
+\newcounter{rem}[section]
+\renewcommand{\therem}{\thesection.\arabic{rem}}
+\newenvironment{Remark}{\par\refstepcounter{rem} \bf Замечание \therem. \sl}{\rm\par}
+\renewcommand{\theequation}{\thesection.\arabic{equation}}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+\renewcommand{\thetable}{\thesection.\arabic{table}}
+
+\renewcommand{\theenumi}{\arabic{enumi}}
+\renewcommand{\labelenumi}{\theenumi)}
+\newcommand{\udc}[1]{УДК #1}
+
+\newcounter{lem}[section]
+\renewcommand{\thelem}{\thesection.\arabic{lem}}
+\newenvironment{Lemma}{\par\refstepcounter{lem}\bf Лемма \thelem. \sl}{\rm\par}
+
+\newcounter{cor}[section]
+\renewcommand{\thecor}{\thesection.\arabic{cor}}
+\newenvironment{Corrolary}{\par\refstepcounter{cor}\bf Следствие \thecor. \sl}{\rm\par}
+\newcounter{theor}[section]
+\renewcommand{\thetheor}{\thesection.\arabic{theor}}
+\newenvironment{Theorem}{\par\refstepcounter{theor}\bf Теорема \thetheor. \sl}{\rm\par}
+%\let \kappa=\ae
+\newcommand{\diag}{\mathop{\rm diag}}
+\newcommand{\epi}{\mathop{\rm epi}}
+\newenvironment{Proof}{\par\noindent\bf Доказательство.\rm}{ \par}
+
+\newcounter{exam}[section]
+\renewcommand{\theexam}{\thesection.\arabic{exam}}
+\newenvironment{Example}{\par\refstepcounter{exam}\bf Пример \theexam. \sl}{\rm\par}
+
+\newcounter{prob}[section]
+\renewcommand{\theprob}{\thesection.\arabic{prob}}
+\newenvironment{Problem}{\par\refstepcounter{prob}\bf Задача \theprob. \sl}{\rm\par}
+
+\newcounter{sol}[section]
+\renewcommand{\thesol}{\thesection.\arabic{sol}}
+\newenvironment{Solution}{\par\refstepcounter{sol}\bf Решение. \rm}{\rm\par}
+
+\newcounter{defin}[section]
+\renewcommand{\thedefin}{\thesection.\arabic{defin}}
+\newenvironment{Definition}{\par\refstepcounter{defin}\bf Определение \thedefin.\sl}{\rm\par}
+
+\newcounter{answ}[section]
+\renewcommand{\theansw}{\thesection.\arabic{answ}}
+\newenvironment{Answer}{\par\refstepcounter{answ}\theansw. \rm}{\rm\par}
+
+\newcounter{exerc}[section]
+\renewcommand{\theexerc}{\thesection.\arabic{exerc}}
+\newenvironment{Exercise}{\par\refstepcounter{exerc}\bf Упражнение \theexerc.\sl}{\rm\par}
+
+\newcounter{algor}[section]
+\renewcommand{\thealgor}{\thesection.\arabic{algor}}
+\newenvironment{Algorithm}[3]{\par\refstepcounter{algor}{\bf Алгоритм \thealgor. }{\sl #1}\par{\bf Вход: }{\sl #2}\par{\bf Выход: }\sl #3\par{\bf Метод.}\par}{\rm\par}
+
+\newcommand{\ljoq}{<<}
+\newcommand{\rjoq}{>>}
+\captiondelim{. }
+
+
+
+%\setcounter{section}{1}
+
+
+\makeatletter
+\def\@seccntformat#1{\csname the#1\endcsname.\quad}
+\makeatother
+
+\algrenewcommand\algorithmicwhile{\textbf{пока}}
+\algrenewcommand\algorithmicdo{\textbf{ }}
+\algrenewcommand\algorithmicend{\textbf{конец}}
+\algrenewcommand\algorithmicif{\textbf{если}}
+\algrenewcommand\algorithmicthen{\textbf{то}}
+\algrenewtext{EndIf}{\textbf{всё}}
+\algrenewcommand\algorithmicfor{\textbf{для}}
+\algrenewtext{ForAll}{\textbf{для всех }}
+\algrenewcommand\algorithmicelse{\textbf{иначе}}
+\algrenewtext{ElsIf}{\textbf{инес }}
+\algrenewtext{Procedure}{\textbf{алг }}
+\algrenewtext{EndProcedure}{\textbf{кон }}
+
+% modify style
+\renewcommand{\familydefault}{\sfdefault}
+% \setlength{\parindent}{1cm} % doesn't work.
+
+\begin{document}
+\title{ForwardCom: открытый стандарт набора команд для высокопроизводительных микропроцессоров}
+\author{Агнер Фог}
+\date{\today}
+\maketitle
+%\raggedright
+%\RaggedRight
+
+\tableofcontents
+\setcounter{secnumdepth}{1}
+
+% Введение
+% - Основные моменты
+% - Основы
+% - Цели дизайна
+% - Сравнение с другими открытыми наборами команд
+% - Литература и ссылки
+\subfile{fwc-introduction.tex}
+
+% Основы архитектуры
+% - Полностью ортогональный набор команд
+% - Размер команды
+% - Набор регистров
+% - Поддержка векторов
+% - Циклы по векторам
+% - Максимальная длина вектора
+% - Маски команд
+% - Режимы адресации
+\subfile{fwc-basic-architecture.tex}
+%
+% Форматы команд
+% - Форматы и шаблоны
+% - Кодирование операндов
+% - Кодирование масок
+% - Формат команд перехода, вызова, и ветвления
+% - Назначение кодов операций
+\subfile{fwc-instruction-formats.tex}
+%
+% Списки команд
+% - Список многоформатных команд
+% - Список малых команд
+% - List of single-format instructions
+\subfile{fwc-instruction-lists.tex}
+%
+%% - Description of instructions
+%% - Common operations that have no dedicated instruction
+%% - Unused instructions
+%\subfile{fwc-description-of-instructions.tex}
+%
+%% Other implementation details
+%% - Endianness
+%% - Implementation of call stack
+%% - Floating point errors and exceptions
+%% - Detecting integer overflow
+%% - Multithreading
+%% - Security features
+%\subfile{fwc_other_implementation_details.tex}
+%
+%% Programmable application-specific instructions
+%\subfile{fwc_programmable_instructions.tex}
+%
+%% Microarchitecture and pipeline design
+%\subfile{fwc_microarchitecture_and_pipeline.tex}
+%
+%% Memory model
+%% - Thread memory protection
+%% - Memory management
+%\subfile{fwc_memory_model.tex}
+%
+%% System programming
+%% - Memory map
+%% - Call stack
+%% - System calls and system functions
+%% - Inter-process calls
+%% - Error message handling
+%\subfile{fwc_system_programming.tex}
+%
+%% Standardization of ABI and software ecosystem
+%% - Compiler support
+%% - Binary data representation
+%% - Further conventions for object-oriented languages
+%% - Function calling convention
+%% - Register usage convention
+%% - Name mangling for function overloading
+%\subfile{fwc_abi_standard.tex}
+%
+%% - Binary format for object files and executable files
+%% - Function libraries and link methods
+%% - Library function dispatch system
+%% - Predicting the stack size
+%% - Exception handling, stack unrolling and debug information
+%\subfile{fwc_object_file_format.tex}
+%
+%% - Assembly language syntax
+%\subfile{fwc_assembly_language_syntax.tex}
+%
+%% Conclusion
+%\subfile{fwc_conclusion.tex}
+%
+%% Revision history
+%\subfile{fwc_revision_history.tex}
+%
+%% Copyright notice
+%\subfile{fwc_copyright_notice.tex}
+
+\end{document}
