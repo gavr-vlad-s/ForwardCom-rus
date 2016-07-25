@@ -2,7 +2,7 @@
 \begin{document}
 
 \chapter{Списки команд}
-Команды ForwardCom перечислены в файле с разделителями в виде запятых, который называется instruction\_list.csv. Этот файл предназначен для использования ассемблерами, дизассемблерами, отладчиками, и эмуляторами. Данный список предварителен, и, возможно, изменится. Пожалуйста, помните, что списки в этом документе синхронизированы со списком в instruction\_list.cvs.
+Команды ForwardCom перечислены в файле с разделителями в виде запятых, название которого --- instruction\_list.csv. Этот файл предназначен для использования ассемблерами, дизассемблерами, отладчиками, и эмуляторами. Данный список предварителен, и, возможно, изменится. Пожалуйста, помните, что списки в этом документе синхронизированы со списком в instruction\_list.cvs.
 
 Этот список команд имеет следующие поля:
 
@@ -250,223 +250,188 @@ store             & 15            & Записать RD в находящийс�
 \endfirsthead
 \endhead
 \hline
-\bfseries Команда & \bfseries OP1 & \bfseries Описание \\ \hline
-clear             & 16            & Очистить регистр RD, установив его длину равной нулю. \\
-%move          & 17 & RD = signed 4-bit integer RS, converted to single precision scalar. \\
-%move          & 18 & RD = signed 4-bit integer RS, converted to double precision scalar. \\
-%move          & 19 & RD = RS. Copy vector of any type. \\
-%add           & 20 & RD += RS, single precision float vector. \\
-%add           & 21 & RD += RS, double precision float vector. \\
-%sub           & 22 & RD --= RS, single precision float vector. \\
-%sub           & 23 & RD --= RS, double precision float vector. \\
-%mul           & 24 & RD *= RS, single precision float vector. \\
-%mul           & 25 & RD *= RS, double precision float vector. \\
-%add\_cps      & 28 & Get size of compressed image for RD and add it to general purpose register RS. \\
-%sub\_cps      & 29 & Get size of compressed image for RD and subtract it from general purpose register RS. \\
-%restore\_cp   & 30 & Restore vector register RD from compressed image pointed to by RS. \\
-%save\_cp      & 31 & Save vector register RD to compressed image pointed to by RS. \\
-%\hline
+\bfseries Команда & \bfseries OP1 & \bfseries Описание                                                                     \\ \hline
+clear             & 16            & Очистить регистр RD, установив его длину равной нулю.                                  \\
+move              & 17            & RD = знаковое 4--разрядное целое из RS, преобразованное в скаляр одинарной точности.   \\
+move              & 18            & RD = знаковое 4--разрядное целое из RS, преобразованное в скаляр двойной точности.     \\
+move              & 19            & RD = RS. Копировать вектор любого типа.                                                \\
+add               & 20            & RD += RS, вектор из вещественных чисел одинарной точности.                             \\
+add               & 21            & RD += RS, вектор из вещественных чисел двойной точности.                               \\
+sub               & 22            & RD --= RS, вектор из вещественных чисел одинарной точности.                            \\
+sub               & 23            & RD --= RS, вектор из вещественных чисел двойной точности.                              \\
+mul               & 24            & RD *= RS,вектор из вещественных чисел одинарной точности.                              \\
+mul               & 25            & RD *= RS, вектор из вещественных чисел двойной точности.                               \\
+add\_cps          & 28            & Получить размер сжатого образа для RD и прибавить его к регистру общего назначения RS. \\
+sub\_cps          & 29            & Получить размер сжатого образа для RD и вычесть его из регистра общего назначения RS.  \\
+restore\_cp       & 30            & Восстановить векторный регистр RD из сжатого образа, на который указывает RS.          \\
+save\_cp          & 31            & Сохранить векторный регистр RD в сжатый образ, на который указывает RS.                \\ \hline
 \end{longtable}
-%
-%\section{List of single-format instructions}
-%These instructions are mostly available in only one or a few formats.
-%
-%\begin{longtable} {|p{20mm}|p{10mm}|p{8mm}|p{75mm}|}
-%\caption{List of single-format instructions with general purpose registers} 
-%\label{table:ListOfSingleFormatInstructionsGP} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Instruction & \bfseries Format &\bfseries OP1 & \bfseries Description \\
-%\hline
-%bitscan\_f    & 1.0   &  1 & Bit scan forward. Find index to lowest set bit in RS (optional). \\
-%bitscan\_r    & 1.0   &  2 & Bit scan reverse. Find index to highest set bit in RS (optional). \\
-%round\_d2     & 1.0   &  3 & Round down RS to nearest power of 2. \\
-%round\_u2     & 1.0   &  4 & Round up RS to nearest power of 2. \\
-%move          & 1.1   &  0 & Move 16-bit sign-extended constant to general purpose register RD. \\
-%move\_u       & 1.1   &  1 & Move 16-bit zero-extended constant to general purpose register RD
-%(can be used as first step of loading a 32-bit constant if double size
-%instructions are not supported). \\
-%add           & 1.1   &  2  & Add 16-bit sign-extended constant to RD. \\
-%sub           & 1.1   &  3  & Subtract 16-bit sign-extended constant from RD. \\
-%subr          & 1.1   &  4  & Subtract RD from 16-bit sign-extended constant. \\
-%mul           & 1.1   &  5  & Multiply RD with 16-bit sign-extended constant. \\
-%div           & 1.1   &  6  & Divide RD with 16-bit sign-extended constant. \\
-%add           & 1.1   &  7  & Shift 16-bit signed constant left by 16 and add to RD. \\
-%move          & 1.1   & 16  & RD = IM2 \textless\textless{} IM1. Sign-extend IM2 to 64 bits and shift left by the unsigned value IM1. \\
-%add           & 1.1   & 17  & RD += IM2 \textless\textless{} IM1. Sign-extend IM2 to 64 bits, shift left by the unsigned value IM1, add to RD. \\
-%and           & 1.1   & 18  & RD \&= IM2 \textless\textless{} IM1. Sign-extend IM2 to 64 bits, shift left by the unsigned value IM1, AND with RD. \\
-%or            & 1.1   & 19  & RD \textbar{}= IM2 \textless\textless{} IM1. Sign-extend IM2 to 64 bits, shift left by the unsigned value IM1, OR with RD. \\
-%xor           & 1.1   & 20  & RD \^{}= IM2 \textless\textless{} IM1. Sign-extend IM2 to 64 bits, shift left by the unsigned value IM1, XOR with RD. \\
-%abs           & 1.8   &  0  & Absolute value of integer. Use saturation if IM1 = 1. \\
-%shift\_add    & 1.8   &  1  & Shift and add. RD += RS \textless\textless{} IM1 (shift right zero extended if IM1 negative). \\
-%read\_spe     & 1.8   & 32  & Read special register RS into g. p. register RD. \\
-%write\_spe    & 1.8   & 33  & Write g. p. register RS to special register RD. \\
-%read\_cpb     & 1.8   & 34  & Read capabilities register RS into g. p. register RD. \\
-%write\_cpb    & 1.8   & 35  & Write g. p. register RS to capabilities register RD. \\
-%read\_perf    & 1.8   & 36  & Read performance counter. \\
-%read\_perfs   & 1.8   & 37  & Read performance counter, serializing. \\
-%read\_sys     & 1.8   & 38  & Read system register RS into g. p. register RD. \\
-%write\_sys    & 1.8   & 39  & Write g. p. register RS to system register RD. \\
-%load\_hi      & 2.6   &  0  & Load 32-bit constant into the high part of a general purpose register. The low part is zero. RD = IM2 \textless\textless{} 32. \\
-%insert\_hi    & 2.6   &  1  & Insert 32-bit constant into the high part of a general purpose register, leaving the low part unchanged.
-%RD = (RS \& 0xFFFFFFFF) \textbar{} (IM2 \textless\textless{} 32). \\
-%add\_unsigned & 2.6   &  2  & Add zero-extended 32-bit constant to general purpose register. \\
-%sub\_unsigned & 2.6   &  3  & Subtract zero-extended 32-bit constant from general purpose register. \\
-%add\_hi       & 2.6   &  4  & Add 32-bit constant to high part of general purpose register. RD = RS + (IM2 \textless\textless{} 32). \\
-%and\_hi       & 2.6   &  5  & AND high part of general purpose register with 32-bit constant. RD = RS \& (IM2 \textless\textless{} 32). \\
-%or\_hi        & 2.6   &  6  & OR high part of general purpose register with 32-bit constant. RD = RS \textbar{} (IM2 \textless\textless{} 32). \\
-%xor\_hi       & 2.6   &  7  & XOR high part of general purpose register with 32-bit constant. RD = RS \^{} (IM2 \textless\textless{} 32). \\
-%address       & 2.6   & 32  & RD = RS + IM2, RS can be THREADP (28), DATAP (29) or IP (30). \\
-%\hline
-%\end{longtable}
-%
-%\begin{longtable} {|p{20mm}|p{10mm}|p{8mm}|p{75mm}|}
-%\caption{List of single-format instructions with vector registers and mixed register types} 
-%\label{table:ListOfSingleFormatInstructionsVector} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Instruction & \bfseries Format &\bfseries OP1, OP2 & \bfseries Description \\
-%\hline
-%set\_len      & 1.2 &  0 & RD = vector register RT with length changed to value of RS. \\
-%get\_len      & 1.2 &  1 & Get length of vector register RS into general purpose register RD. \\
-%set\_num      & 1.2 &  2 & Change the length of vector register to RS$\cdot$OS. \\
-%get\_num      & 1.2 &  3 & Get length of vector register divided by the operand size. \\
-%compress      & 1.2 &  4 & Compress vector RT of length RS to a vector of half the length and half the element size. Double precision $\rightarrow$ single precision, 64-bit
-%integer $\rightarrow$ 32-bit integer, etc. \\
-%compress\_ss  & 1.2 &  5 & Compress integer vector RT of length RS to a vector of half the length and half the element size, signed with saturation (optional). \\
-%compress\_us  & 1.2 &  6 & Compress integer vector RT of length RS to a vector of half the length and half element size, unsigned with saturation (optional). \\
-%expand        & 1.2 &  7 & Expand vector RT of length RS/2 and half the specified element size to a vector of length RS with the specified element size. Half
-%precision $\rightarrow$ single precision, 32-bit integer $\rightarrow$ 64-bit integer with sign extension, etc. \\
-%expand\_us    & 1.2 &  8 & Expand integer vector RT of length RS/2 and half the specified element size to a vector of length RS with the specified element
-%size. 32-bit integer $\rightarrow$ 64-bit integer with zero extension, etc. \\
-%compress\_sparse&1.2 &  9 & Compress sparse vector elements indicated by mask bits into contiguous vector. RS = length of input vector. (optional). \\
-%expand\_sparse& 1.2 & 10 & Expand contiguous vector into sparse vector with positions
-%indicated by mask bits. RS = length of output vector. (optional). \\
-%extract       & 1.2 & 11 & Extract one element from vector RT, starting at offset RS$\cdot$OS, with size OS into scalar in vector register RD. \\
-%insert        & 1.2 & 12 & Replace one element in vector RD, starting at offset RS$\cdot$OS, with scalar RT. \\
-%broadcast     & 1.2 & 13 & Broadcast first element of vector RT into all elements of RD with length RS. \\
-%bits2bool     & 1.2 & 14 & The lower n bits of RT are unpacked into a boolean vector RD with length RS, with one bit in each element, where n = RS / OS. \\
-%bool2bits     & 1.2 & 15 & The boolean vector RT with length RS is packed into the lower n bits of RD, taking bit 0 of each element, where n = RS / OS. The
-%length of RD is at least sufficient to contain n bits. \\
-%bool\_reduce  & 1.2 & 16 & The boolean vector RT with length RS is reduced by combining bit 0 of all elements. The output is a scalar integer where bit 0 is the
-%AND combination of all the bits, and bit 1 is the OR combination of
-%all the bits. The remaining bits are reserved for future use. \\
-%shift\_expand & 1.2 & 18 & Shift vector RT up by RS bytes and extend the vector length by RS. The lower RS bytes of RD will be zero. \\
-%shift\_reduce & 1.2 & 19 & Shift vector RT down RS bytes and reduce the length by RS. The lower RS bytes of RT are lost. \\
-%shift\_up      & 1.2 & 20 & Shift elements of vector RT up RS elements. The lower RS elements of RD will be zero, the upper RS elements of RT are lost. \\
-%shift\_dn      & 1.2 & 21 & Shift elements of vector RT down RS elements. The upper RS
-%elements of RD will be zero, the lower RS elements of RT are lost. \\
-%div\_ex\_s     & 1.2 & 24 & Divide vector of double-size signed integers RS by signed integers RT. RS has element size 2$\cdot$OS. These are divided by the even numbered
-%elements of RT with size OS. The results are stored in
-%the even-numbered elements of RD. The remainders are stored in
-%the odd-numbered elements of RD. (Optional for vectors). \\
-%div\_ex\_u    & 1.2 & 25 & Same, with unsigned integers. (Optional for vectors). \\
-%sqrt          & 1.2 & 26 & Square root (floating point, optional). \\
-%add\_c        & 1.2 & 28 & Add with carry. Vector has two elements. The upper element is used as carry on input and output (optional). \\
-%sub\_b        & 1.2 & 29 & Subtract with borrow. Vector has two elements. The upper element is used as borrow on input and output (optional). \\
-%add\_ss       & 1.2 & 30 & Add integer vectors, signed with saturation (optional). \\
-%add\_us       & 1.2 & 31 & Add integer vectors, unsigned with saturation (optional). \\
-%sub\_ss       & 1.2 & 32 & Subtract integer vectors, signed with saturation (optional). \\
-%sub\_us       & 1.2 & 33 & Subtract integer vectors, unsigned with saturation (optional). \\
-%mul\_ss       & 1.2 & 34 & Multiply integer vectors, signed with saturation (optional). \\
-%mul\_us       & 1.2 & 35 & Multiply integer vectors, unsigned with saturation (optional). \\
-%shl\_ss       & 1.2 & 36 & Shift left integer vectors, signed with saturation (optional). \\
-%shl\_us       & 1.2 & 37 & Shift left integer vectors, unsigned with saturation (optional). \\
-%add\_oc       & 1.2 & 38 & add with overflow check (optional). \\
-%sub\_oc       & 1.2 & 39 & subtract with overflow check (optional). \\
-%subr\_oc      & 1.2 & 40 & subtract reverse with overflow check (optional). \\
-%mul\_oc       & 1.2 & 41 & multiply with overflow check (optional). \\
-%div\_oc       & 1.2 & 42 & divide with overflow check (optional). \\
-%input         & 1.2 & 48 & read from input port. RD = vector register, RT = port address, RS = vector length (privileged instruction). \\
-%output        & 1.2 & 49 & write to output port. RD = vector register source operand, RT = port address, RS = vector length (privileged instruction). \\
-%gp2vec        & 1.3 B &  0 & Move value of general purpose register RS to scalar in vector register RD. \\
-%set\_bits\_x   & 1.3 B &  1 & Set all bits except one. RD = RS \textbar{} \~{} (1 \textless\textless{} IM1). \\
-%clear\_bits\_x & 1.3 B &  2 & Clear all bits except one. RD = RS \& (1 \textless\textless{} IM1). \\
-%make\_sequence& 1.3 B &  3 & Make a vector with RS sequential numbers. First value is IM1. \\
-%mask\_length  & 1.3 B &  4 & Make mask with true in the first RS bytes. Option bits in IM1. \\
-%vec2gp        & 1.3 B &  8 & Move value of first element of vector register RS to general purpose register RD. \\
-%bitscan\_f    & 1.3 B &  9 & Bit scan forward. Find index to lowest set bit in RS (optional for vectors). \\
-%bitscan\_r    & 1.3 B & 10 & Bit scan reverse. Find index to highest set bit in RS (optional for vectors). \\
-%
-%float2int     & 1.3 B & 12 & Conversion of floating point to integer with the same operand size. The rounding mode is specified in IM1. \\
-%int2float     & 1.3 B & 13 & Conversion of integer to floating point with same operand size. \\
-%
-%round         & 1.3 B & 14 & Round floating point to integer in floating point  representation. The rounding mode is specified in IM1. \\
-%round2n       & 1.3 B & 15 & Round to nearest multiple of $2^n$. \newline 
-%RD = $2^n\cdot$ round($2^{-n}\cdot$ RS). $n$ is a signed integer constant in IM1 (optional). \\
-%abs           & 1.3 B & 16 & Absolute value of integer. Uses saturation if IM1 = 1. \\
-%popcount      & 1.3 B & 17 & Count the number of bits in RS that are 1. \\
-%broadcast     & 1.3 B & 18 & Broadcast 8-bit constant into all elements of RD with length RS (31 in RS field gives scalar output). \\
-%fp\_category  & 1.3 B & 19 & Check if floating point numbers belong to the categories indicated by constant. \\
-%byte\_reverse & 1.3 B & 20 & Reverse the order of bytes in each element of vector. \\
-%bit\_reverse  & 1.3 B & 21 & Reverse the order of bits in each element of vector (optional). \\
-%truth\_tab2   & 1.3 B & 24 & Boolean function of two inputs, given by a truth table. \\
-%read\_spev    & 1.3 B & 30 & Read special register RT into vector register RD with  length RS. \\
-%move          & 1.3 C & 32 & Move 16 bit constant to 16-bit scalar (optional). \\
-%add           & 1.3 C & 33 & Add broadcast 16 bit constant to 16-bit vector elements (optional). \\
-%and           & 1.3 C & 34 & AND broadcast 16 bit constant with 16-bit vector elements (optional). \\
-%or            & 1.3 C & 35 & OR broadcast 16 bit constant with 16-bit vector elements (optional). \\
-%xor           & 1.3 C & 36 & XOR broadcast 16 bit constant with 16-bit vector elements (optional). \\
-%move          & 1.3 C & 38 & RD = IM2 \textless\textless{} IM1. Sign-extend IM2 to 32 bits and shift left by the unsigned value IM1 to make 32 bit scalar (optional). \\
-%move          & 1.3 C & 39 & RD = IM2 \textless\textless{} IM1. Sign-extend IM2 to 64 bits and shift left by the unsigned value IM1 to make 64 bit scalar (optional). \\
-%add           & 1.3 C & 40 & RD += IM2 \textless\textless{} IM1. Add broadcast shifted signed constant to 32-bit vector elements (optional). \\
-%add           & 1.3 C & 41 & RD += IM2 \textless\textless{} IM1. Add broadcast shifted signed constant to 64-bit vector elements (optional). \\
-%and           & 1.3 C & 42 & RD \&= IM2 \textless\textless{} IM1. AND broadcast shifted signed constant with 32-bit vector elements (optional). \\
-%and           & 1.3 C & 43 & RD \&= IM2 \textless\textless{} IM1. AND broadcast shifted signed constant with 64-bit vector elements (optional). \\
-%or            & 1.3 C & 44 & RD \textbar{}= IM2 \textless\textless{} IM1. OR broadcast shifted signed constant with 32-bit vector elements (optional). \\
-%or            & 1.3 C & 45 & RD \textbar{}= IM2 \textless\textless{} IM1. OR broadcast shifted signed constant with 64-bit vector elements (optional). \\
-%xor           & 1.3 C & 46 & RD \^{}= IM2 \textless\textless{} IM1. XOR broadcast shifted signed constant with 32-bit vector elements (optional). \\
-%xor           & 1.3 C & 47 & RD \^{}= IM2 \textless\textless{} IM1. XOR broadcast shifted signed constant with 64-bit vector elements (optional). \\
-%add           & 1.3 C & 48 & RD += IM21 \textless\textless{} 16. Add broadcast signed 16-bit constant shifted left by 16 to 32-bit vector elements (optional). \\
-%add           & 1.3 C & 49 & RD += IM21 \textless\textless{} 16. Add broadcast signed 16-bit constant shifted left by 16 to 64-bit vector elements (optional). \\
-%mov           & 1.3 C & 56 & Move converted half precision floating point constant to single
-%precision scalar (optional). \\
-%mov           & 1.3 C & 57 & Move converted half precision floating point constant to double
-%precision scalar (optional). \\
-%add           & 1.3 C & 58 & Add broadcast half precision floating point constant to single
-%precision vector (optional). \\
-%add           & 1.3 C & 59 & Add broadcast half precision floating point constant to double
-%precision vector (optional). \\
+
+\section{Список одноформатных команд}
+Эти команды имеются преимущественно в одном или нескольких форматах.
+
+\begin{longtable} {|p{23mm}|p{15mm}|p{9mm}|p{99mm}|}
+\caption{Список одноформатных команд, работающих с регистрами общего назначения} 
+\label{table:ListOfSingleFormatInstructionsGP} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Команда & \bfseries Формат &\bfseries OP1 & \bfseries Описание \\ \hline
+bitscan\_f        & 1.0   &  1 & Сканировать разряды вперёд. Найти номер самого младшего разряда RS, равного единице (необязательна). \\
+bitscan\_r        & 1.0   &  2 & Сканировать разряды назад. Найти номер самого старшего разряда RS, равного единице (необязательна).  \\
+round\_d2         & 1.0   &  3 & Округлить RS к ближайшей меньшей степени числа 2.                                                    \\
+round\_u2         & 1.0   &  4 & Округлить RS к ближайшей большей степени числа 2.                                                    \\
+move              & 1.1   &  0 & Переслать 16--разрядную расширенную знаком константу в регистр общего назначения RD.                 \\
+move\_u           & 1.1   &  1 & Переслать 16--разрядную расширенную нулём константу в регистр общего назначения RD (может использоваться в качестве первого шага загрузки 32--разрядной константы, если не поддерживаются команды двойного размера). \\
+add               & 1.1   &  2 & Прибавить 16--разрядную расширенную знаком константу к RD. \\
+sub               & 1.1   &  3 & Вычесть 16--разрядную расширенную знаком константу из RD.  \\
+subr              & 1.1   &  4 & Вычесть RD из 16--разрядной расширенной знаком константы.  \\
+mul               & 1.1   &  5 & Умножить RD на 16--разрядную расширенную знаком константу. \\
+div               & 1.1   &  6 & Поделить RD на 16--разрядную расширенную знаком константу. \\
+add               & 1.1   &  7 & Сдвинуть  16--разрядную расширенную знаком константу влево на 16 разрядов и прибавить к RD. \\
+move              & 1.1   & 16 & RD = IM2 $\ll$ IM1. Знаково расширить IM2 до 64 разрядов и сдвинуть результат влево, на количество разрядов, указанное беззнаковым значением в IM1. \\
+add               & 1.1   & 17 & RD += IM2 $\ll$ IM1. Знаково расширить IM2 до 64 разрядов, сдвинуть результат влево, на количество разрядов, указанное беззнаковым значением в IM1, и прибавить то, что получилось, к RD. \\
+and               & 1.1   & 18 & RD \&= IM2 $\ll$ IM1. Знаково расширить IM2 до 64 разрядов, сдвинуть результат влево, на количество разрядов, указанное беззнаковым значением в IM1, и выполнить поразрядное И с RD. \\
+or                & 1.1   & 19 & RD \textbar{}= IM2 $\ll$ IM1. Знаково расширить IM2 до 64 разрядов, сдвинуть результат влево, на количество разрядов, указанное беззнаковым значением в IM1, и выполнить поразрядное ИЛИ с RD. \\
+xor               & 1.1   & 20 & RD \^{}= IM2 $\ll$. Знаково расширить IM2 до 64 разрядов, сдвинуть результат влево, на количество разрядов, указанное беззнаковым значением в IM1, и выполнить поразрядное ИСКЛЮЧАЮЩЕЕ ИЛИ с RD. \\
+abs               & 1.8   &  0 & Абсолютная величина целого числа. Использовать насыщение, если IM1 = 1. \\
+shift\_add        & 1.8   &  1 & Сдвинуть и сложить. RD += RS $\ll$ IM1 (сдвинуть вправо, расширив нулём, если IM1 отрицательно). \\
+read\_spe         & 1.8   & 32 & Прочитать содержимое специального регистра RS в РОН RD. \\
+write\_spe        & 1.8   & 33 & Записать содержимое РОН RS в специальный регистр RD. \\
+read\_cpb         & 1.8   & 34 & Прочитать содержимое регистра возможностей RS в РОН RD. \\
+write\_cpb        & 1.8   & 35 & Записать содержимое РОН RS в регистр возможностей RD. \\
+read\_perf        & 1.8   & 36 & Прочесть счётчик производительности. \\
+read\_perfs       & 1.8   & 37 & Прочесть счётчик производительности, используя сериализацию. \\
+read\_sys         & 1.8   & 38 & Прочесть содержимое системного регистра RS в РОН RD. \\
+write\_sys        & 1.8   & 39 & Записать содержимое РОН RS в системный регистр RD. \\
+load\_hi          & 2.6   &  0 & Загрузить 32--разрядную константу в старшую часть регистра общего назначения. Младшая часть зануляется. RD = IM2 $\ll$ 32. \\
+insert\_hi        & 2.6   &  1 & Вставить 32--разрядную константу в старшую часть регистра общего назначения, оставляя младшую часть без изменения. RD = (RS \& 0xFFFFFFFF) \textbar{} (IM2 $\ll$ 32). \\
+add\_unsigned     & 2.6   &  2 & Прибавить расширенную нулём 32--разрядную константу к регистру общего назначения. \\
+sub\_unsigned     & 2.6   &  3 & Вычесть расширенную нулём 32--разрядную константу из регистра общего назначения. \\
+add\_hi           & 2.6   &  4 & Прибавить 32--разрядную константу к старшей части регистра общего назначения. RD = RS + (IM2 $\ll$ 32). \\
+and\_hi           & 2.6   &  5 & Поразрядное И старшей части регистра общего назначения с 32--разрядной константой. RD = RS \& (IM2 $\ll$ 32). \\
+or\_hi            & 2.6   &  6 & Поразрядное ИЛИ старшей части регистра общего назначения с 32--разрядной константой. RD = RS \textbar{} (IM2 $\ll$ 32). \\
+xor\_hi           & 2.6   &  7 & Поразрядное ИСКЛЮЧАЮЩЕЕ ИЛИ старшей части регистра общего назначения с 32--разрядной константой. RD = RS \^{} (IM2 $\ll$ 32). \\
+address           & 2.6   & 32 & RD = RS + IM2, RS может быть THREADP (28), DATAP (29), или IP (30). \\ \hline
+\end{longtable}
+
+\begin{longtable}{|p{25mm}|p{16mm}|p{9mm}|p{99mm}|}
+\caption{Список одноформатных команд, работающих с векторными регистрами и регистрами разного типа} 
+\label{table:ListOfSingleFormatInstructionsVector} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Команда & \bfseries Формат &\bfseries OP1, OP2 & \bfseries Описание \\ \hline
+set\_len         & 1.2 &  0 & RD = векторный регистр RT со значением длины, указанным в RS. \\
+get\_len         & 1.2 &  1 & Записать длину векторного регистра RS в регистр общего назначения RD. \\
+set\_num         & 1.2 &  2 & Заменить длину векторного регистра на RS$\cdot$OS. \\
+get\_num         & 1.2 &  3 & Получить длину векторного регистра, делённую на размер операнда. \\
+compress         & 1.2 &  4 & Сжать вектор RT длины RS до вектора половинной длины и половинного размера элемента: двойная точность $\rightarrow$ одинарная точность, 64--разрядное целое $\rightarrow$ 32--разрядное целое, и т.п. \\
+compress\_ss     & 1.2 &  5 & Сжать целочисленный вектор RT длины RS до вектора половинной длины и половинного размера элемента, знаково и с насыщением (необязательна). \\
+compress\_us     & 1.2 &  6 & Сжать целочисленный вектор RT длины RS до вектора половинной длины и половинного размера элемента, беззнаково и с насыщением (необязательна). \\
+expand           & 1.2 &  7 & Расширить вектор RT длины RS/2 и половинного размера элемента до вектора длины RS с полного размера элемента: половинная точность $\rightarrow$ одинарная точность, 32--разрядное целое $\rightarrow$ 64--разрядное целое (с расширением знаком), и т.п. \\
+expand\_us       & 1.2 &  8 & Расширить вектор RT длины RS/2 и половинного размера элемента до вектора длины RS с полного размера элемента: 32--разрядное целое $\rightarrow$ 64--разрядное целое (с расширением нулём), и т.п. \\
+compress\_sparse & 1.2 &  9 & Сжать разреженный вектор с элементами, указанными разрядами маски, в непрерывный вектор. RS = длина входного вектора (необязательна). \\
+expand\_sparse   & 1.2 & 10 & Расширить непрерывный вектор до разреженного вектора, позиции в котором указаны разрядами маски. RS = длина результирующего вектора (необязательна). \\
+extract          & 1.2 & 11 & Выделить один элемент из вектора RT, начинающийся со смещения RS$\cdot$OS и имеющий размер OS, в скаляр, находящийся в векторном регистре RD. \\
+insert           & 1.2 & 12 & Заменить один элемент вектора RD, начинающийся со смещения RS$\cdot$OS, скаляром из RT. \\
+broadcast        & 1.2 & 13 & Разослать первый элемент вектора RT во все элементы вектора RD, имеющего длину, указанную в RS. \\
+bits2bool        & 1.2 & 14 & Младшие n разрядов из RT распаковываются в булев вектор RD длины RS, с одним разрядом в каждом элементе, где n = RS / OS. \\
+bool2bits        & 1.2 & 15 & Булев вектор RT длины RS упаковывается в младшие n разрядов RD, беря разряд с номером 0 в каждом элементе, n = RS / OS. Длина RD должна быть достаточна для хранения, по меньшей мере, n разрядов. \\
+bool\_reduce     & 1.2 & 16 & Логический вектор RT длины RS сворачивается, посредством комбинирования разрядов номер 0 всех элементов. Результатом является скалярное целое, в котором разряд №0 является поразрядным И всех разрядов с номером 0, а разряд №1 --- поразрядными ИЛИ. Остальные разряды зарезервированы для последующего использования. \\
+shift\_expand    & 1.2 & 18 & Сдвинуть вектор RT влево на RS байтов и увеличить длину вектора на RS. Младшие RS байтов в RD будут нулями. \\
+shift\_reduce    & 1.2 & 19 & Сдвинуть вектор RT вправо на RS байтов и уменьшить длину вектора на RS. Младшие RS байт вектора RT теряются. \\
+shift\_up        & 1.2 & 20 & Сдвинуть вектор RT влево на RS элементов. Младшие RS элементов вектора RD будут нулями, а старшие RS элементов из RT --- теряются. \\
+shift\_dn        & 1.2 & 21 & Сдвинуть вектор RT вправо на RS элементов. Старшие RS элементов вектора RD будут нулями, а младшие RS элементов из RT --- теряются. \\
+div\_ex\_s       & 1.2 & 24 & Разделить вектор RS, состоящий из целых чисел двойного размера, на знаковые целые числа из RT. Размер элемента RS равен 2$\cdot$OS. Деление выполняется на элементы вектора RT (размер элемента которого равен OS), имеющие чётные номера. Частные сохраняются в элементах вектора RD, имеющих чётные номера, а остатки --- в элементах с нечётными номерами (для векторов --- необязательно). \\
+div\_ex\_u       & 1.2 & 25 & То же, но для беззнаковых целых (для векторов --- необязательно). \\
+sqrt             & 1.2 & 26 & Квадратный корень (для вещественных чисел, необязательно). \\
+add\_c           & 1.2 & 28 & Сложить с переносом. Вектор имеет два элемента.  Старший элемент используется как перенос и на входе, и на выходе (необязательна). \\
+sub\_b           & 1.2 & 29 & Вычесть с заёмом. Вектор имеет два элемента.  Старший элемент используется как заём и на входе, и на выходе (необязательна). \\
+add\_ss          & 1.2 & 30 & Сложить целочисленные векторы, со знаковым насыщением (необязательна). \\
+add\_us          & 1.2 & 31 & Сложить целочисленные векторы, с беззнаковым насыщением (необязательна). \\
+sub\_ss          & 1.2 & 32 & Вычесть целочисленные векторы, со знаковым насыщением (необязательна). \\
+sub\_us          & 1.2 & 33 & Вычесть целочисленные векторы, с беззнаковым насыщением (необязательна). \\
+mul\_ss          & 1.2 & 34 & Умножить целочисленные векторы, со знаковым насыщением (необязательна). \\
+mul\_us          & 1.2 & 35 & Умножить целочисленные векторы, с беззнаковым насыщением (необязательна). \\
+shl\_ss          & 1.2 & 36 & Сдвинуть влево целочисленные векторы, со знаковым насыщением (необязательна). \\
+shl\_us          & 1.2 & 37 & Сдвинуть влево целочисленные векторы, с беззнаковым насыщением (необязательна). \\
+add\_oc          & 1.2 & 38 & Сложить с проверкой переполнения (необязательна). \\
+sub\_oc          & 1.2 & 39 & Вычесть с проверкой переполнения (необязательна). \\
+subr\_oc         & 1.2 & 40 & Обратное вычитание с проверкой переполнения (необязательна). \\
+mul\_oc          & 1.2 & 41 & Умножить с проверкой переполнения (необязательна). \\
+div\_oc          & 1.2 & 42 & Деление с проверкой переполнения (необязательна). \\
+input            & 1.2 & 48 & Прочесть из порта ввода. RD = векторный регистр, RT = адрес порта, RS = длина вектора (привилегированная команда). \\
+output           & 1.2 & 49 & Записать в порт вывода. RD = являющийся векторным регистром операнд--источник, RT = адрес порта, RS = длина вектора (привилегированная команда). \\
+gp2vec           & 1.3 B &  0 & Переслать значение из регистра общего назначения RS в находящийся в векторном регистре RD скаляр. \\
+set\_bits\_x     & 1.3 B &  1 & Установить все разряды, кроме одного. RD = RS \textbar{} \~{} (1 $\ll$ IM1). \\
+clear\_bits\_x   & 1.3 B &  2 & Сбросить все разряды, кроме одного. RD = RS \& (1 $\ll$ IM1). \\
+make\_sequence   & 1.3 B &  3 & Создать вектор, состоящий из RS последовательных чисел. Первое значение равно IM1. \\
+mask\_length     & 1.3 B &  4 & Создать маску с true в первых RS байтах. Разряды опций --- в IM1. \\
+vec2gp           & 1.3 B &  8 & Переслать значение первого элемента векторного регистра RS в регистр общего назначения RD. \\
+bitscan\_f       & 1.3 B &  9 & Сканировать разряды вперёд. Найти индекс самого младшего разряда регистра RS, равного единице (для векторов необязательна). \\
+bitscan\_r       & 1.3 B & 10 & Сканировать разряды назад. Найти индекс самого старшего разряда регистра RS, равного единице (для векторов необязательна). \\
+float2int        & 1.3 B & 12 & Преобразование вещественного значения в целочисленное значение, имеющее тот же размер операнда. Режим округления указывается в IM1. \\
+int2float        & 1.3 B & 13 & Преобразование целочисленного значения в вещественное значение, имеющее тот же размер операнда. \\
+round            & 1.3 B & 14 & Округлить вещественное число к целочисленному значению в вещественном представлении. Режим округления указывается в IM1. \\
+round2n          & 1.3 B & 15 & Округлить к ближайшему кратному числа $2^n$. \newline 
+     RD = $2^n\cdot$ round($2^{-n}\cdot$ RS). $n$ --- знаковая целочисленная константа, находящаяся в IM1 (необязательна). \\
+abs              & 1.3 B & 16 & Абсолютная величина целого числа. Если IM1 = 1, то используется насыщение. \\
+popcount         & 1.3 B & 17 & Подсчитать количество разрядов регистра RS, равных 1. \\
+broadcast        & 1.3 B & 18 & Разослать 8--разрядную константу во все элементы регистра RD, имеющего длину, указанную в регистре RS (31 в поле RS даёт скалярный результат). \\
+fp\_category     & 1.3 B & 19 & Проверить, принадлежат ли вещественные числа категориям, указанным  константой. \\
+byte\_reverse    & 1.3 B & 20 & Обратить порядок байтов в каждом элементе вектора. \\
+bit\_reverse     & 1.3 B & 21 & Обратить порядок разрядов в каждом элементе вектора (необязательна). \\
+truth\_tab2      & 1.3 B & 24 & Булева функция от двух переменных, заданная таблицей истинности. \\
+read\_spev       & 1.3 B & 30 & Прочесть специальный регистр RT в векторный регистр RD, имеющий длину RS. \\
+move             & 1.3 C & 32 & Переслать 16--разрядную константу в 16--разрядный скаляр (необязательна). \\
+add              & 1.3 C & 33 & Сложить размноженную 16--разрядную константу с 16--разрядными элементами вектора (необязательна). \\
+and              & 1.3 C & 34 & Выполнить поразрядное И размноженной 16--разрядной константы с 16--разрядными элементами вектора (необязательна). \\
+or               & 1.3 C & 35 & Выполнить поразрядное ИЛИ размноженной 16--разрядной константы с 16--разрядными элементами вектора (необязательна).  \\
+xor              & 1.3 C & 36 & Выполнить поразрядное ИСКЛЮЧАЮЩЕЕ ИЛИ размноженной 16--разрядной константы с 16--разрядными элементами вектора (необязательна). \\
+move             & 1.3 C & 38 & RD = IM2 $\ll$ IM1. Расширить IM2 знаком до 32 разрядов и сдвинуть результат влево на беззнаковое значение IM1, чтобы получить 32--разрядный скаляр (необязательна). \\
+%move          & 1.3 C & 39 & RD = IM2 $\ll$ IM1. Sign-extend IM2 to 64 bits and shift left by the unsigned value IM1 to make 64 bit scalar (optional). \\
+%add           & 1.3 C & 40 & RD += IM2 $\ll$ IM1. Add broadcast shifted signed constant to 32-bit vector elements (optional). \\
+%add           & 1.3 C & 41 & RD += IM2 $\ll$ IM1. Add broadcast shifted signed constant to 64-bit vector elements (optional). \\
+%and           & 1.3 C & 42 & RD \&= IM2 $\ll$ IM1. AND broadcast shifted signed constant with 32-bit vector elements (optional). \\
+%and           & 1.3 C & 43 & RD \&= IM2 $\ll$ IM1. AND broadcast shifted signed constant with 64-bit vector elements (optional). \\
+%or            & 1.3 C & 44 & RD \textbar{}= IM2 $\ll$ IM1. OR broadcast shifted signed constant with 32-bit vector elements (optional). \\
+%or            & 1.3 C & 45 & RD \textbar{}= IM2 $\ll$ IM1. OR broadcast shifted signed constant with 64-bit vector elements (optional). \\
+%xor           & 1.3 C & 46 & RD \^{}= IM2 $\ll$ IM1. XOR broadcast shifted signed constant with 32-bit vector elements (optional). \\
+%xor           & 1.3 C & 47 & RD \^{}= IM2 $\ll$ IM1. XOR broadcast shifted signed constant with 64-bit vector elements (optional). \\
+%add           & 1.3 C & 48 & RD += IM21 $\ll$ 16. Add broadcast signed 16-bit constant shifted left by 16 to 32-bit vector elements (optional). \\
+%add           & 1.3 C & 49 & RD += IM21 $\ll$ 16. Add broadcast signed 16-bit constant shifted left by 16 to 64-bit vector elements (optional). \\
+%mov           & 1.3 C & 56 & Move converted half precision floating point constant to single precision scalar (optional). \\
+%mov           & 1.3 C & 57 & Move converted half precision floating point constant to double precision scalar (optional). \\
+%add           & 1.3 C & 58 & Add broadcast half precision floating point constant to single precision vector (optional). \\
+%add           & 1.3 C & 59 & Add broadcast half precision floating point constant to double precision vector (optional). \\
 %mul           & 1.3 C & 60 & Multiply broadcast half precision floating point constant with single precision vector (optional). \\
 %mul           & 1.3 C & 61 & Multiply broadcast half precision floating point constant with double precision vector (optional). \\
-%permute       & 2.5 & 2, 8  & The vector elements of RT are permuted within each block of size RS bytes, using indices in RU. Each index is relative to the
-%beginning of a block. An index out of range produces zero. The
-%maximum block size is implementation dependent. \\
-%concatenate   & 2.5 & 2, 9 & A vector RT of length RS and a vector RU of length RS are
-%concatenated into a vector RD of length 2$\cdot$RS. \\
+%permute       & 2.5 & 2, 8  & The vector elements of RT are permuted within each block of size RS bytes, using indices in RU. Each index is relative to the beginning of a block. An index out of range produces zero. The maximum block size is implementation dependent. \\
+%concatenate   & 2.5 & 2, 9 & A vector RT of length RS and a vector RU of length RS are concatenated into a vector RD of length 2$\cdot$RS. \\
 %truth\_tab3   & 2.5 & 3, 8 & Boolean function of three inputs, given by a truth table (optional). \\
 %truth\_tab4   & 2.5 & 4, 8 & Boolean function of four inputs, given by a truth table (optional). \\
 %mul\_add      & 2.5 & 3, 9 & RD = $\pm$ RS $\pm$ RT $\cdot$ RU (optional but recommended). \\
 %add\_add      & 2.5 & 3, 10 & RD = $\pm$ RS $\pm$ RT $\pm$ RU (optional). \\
-%add\_add\_add & 2.5 & 3, 11 & RD = $\pm$ RS $\pm$ RT $\pm$ RU $\pm$ IM2 
-%Add three vector register operands and a 16-bit constant IM2 (optional). \\
-%add\_add\_add & 2.5 & 4, 11 & RD = $\pm$ RD $\pm$ RS $\pm$ RT $\pm$ RU
-%Add four vector register operands (optional). \\
+%add\_add\_add & 2.5 & 3, 11 & RD = $\pm$ RS $\pm$ RT $\pm$ RU $\pm$ IM2  Add three vector register operands and a 16-bit constant IM2 (optional). \\
+%add\_add\_add & 2.5 & 4, 11 & RD = $\pm$ RD $\pm$ RS $\pm$ RT $\pm$ RU Add four vector register operands (optional). \\
 %load\_hi      & 2.7 & 16 & Make vector of two elements. dest[0] = 0, dest[1] = IM2. \\
 %insert\_hi    & 2.7 & 17 & Make vector of two elements. dest[0] = src1[0], dest[1] = IM2. \\
 %make\_mask    & 2.7 & 18 & Make vector where bit 0 of each element comes from bits in IM2, the remaining bits come from RS. \\
 %replace       & 2.7 & 19 & Replace elements in RS by constant IM2. \\
-%replace\_even & 2.7 & 20 & Replace even-numbered elements in RS by constant
-%IM2. \\
-%replace\_odd  & 2.7 & 21 & Replace odd-numbered elements in RS by constant
-%IM2. \\
+%replace\_even & 2.7 & 20 & Replace even-numbered elements in RS by constant IM2. \\
+%replace\_odd  & 2.7 & 21 & Replace odd-numbered elements in RS by constant IM2. \\
 %broadcast     & 2.7 & 22 & Broadcast 32-bit constant into all elements of RD with length RS (31 in RS field gives scalar output). \\
-%permute       & 2.7 & 33 & The vector elements of RT are permuted within each block of size RS bytes. The 4$\cdot$n bits of IM2 are used as index with 4 bits for
-%each element in blocks of size n. The same pattern is used in each
-%block. The number of elements in each block, n = RS / OS $\leq$ 8. \\
-%\hline
-%\end{longtable}
-%
+%permute       & 2.7 & 33 & The vector elements of RT are permuted within each block of size RS bytes. The 4$\cdot$n bits of IM2 are used as index with 4 bits for each element in blocks of size n. The same pattern is used in each block. The number of elements in each block, n = RS / OS $\leq$ 8. \\ \hline
+\end{longtable}
+
 %\begin{longtable} {|p{20mm}|p{10mm}|p{8mm}|p{75mm}|}
 %\caption{List of single-format instructions with memory operands.} 
 %\label{table:ListOfSingleFormatInstructionsMemory} \\
 %\endfirsthead
 %\endhead
 %\hline
-%\bfseries Instruction & \bfseries Format &\bfseries OP1, OP2 & \bfseries Description \\
-%\hline
+%\bfseries Instruction & \bfseries Format &\bfseries OP1, OP2 & \bfseries Description \\ \hline
 %store         & 2.7 B & 48 & Store 32-bit constant IM2 to memory operand with base RT and 8-bit offset IM1 (optional). \\
 %fence         & 2.4.x & 0, 8 & Memory fence. read, write or full indicated by OP3.  \\
 %cmp\_swap     & 2.8.x & 1, 8 & Atomic compare and exchange.  \\
