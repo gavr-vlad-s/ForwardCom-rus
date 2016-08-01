@@ -12,606 +12,489 @@
 Эти команды NOP могут использоваться только как заполнители, но не для задержек.
 
 \subsubsection{move}
-%Copy value from a register, memory operand or immediate constant to a register. If the destination is a vector register and the source is an immediate constant then the result will be a scalar. The value will not be broadcast because there is no other input operand that specifies the vector length. If a vector is desired then use the broadcast instruction instead.
-%\vspace{2mm}
-%
-%The move instruction with an immediate operand is the preferred method for setting a register to zero.
-%\vspace{2mm}
-%
-%The move instruction has several additional tiny and single-format variants. The assembler will normally choose the shortest variant that fits the specified operands.
-%
-%
-%\subsubsection{store}
-%The source and destination operands are swapped so that the value of RD is written to a memory operand. Only formats that specify a memory operand (scalar or vector without broadcast) are allowed.
-%\vspace{2mm}
-%
-%The size of the memory operand is determined by the operand size OS when a scalar memory operand is specified, or by the vector length register in RS when a vector memory operand is specified.
-%\vspace{2mm}
-%
-%The hardware must be able to handle memory operand sizes that are not powers of 2 without touching additional memory (read and rewrite beyond the memory operand is not allowed unless access from other threads is blocked during the operation and any access violation is suppressed). It is allowed to write the operand in a piecemeal fashion.
-%\vspace{2mm}
-%
-%Masked operation with bit 0 and 1 both zero will write zero to the memory. 
-%\vspace{2mm}
-%
-%Masked operation with bit 0 = 0 and bit 1 = 1 may or may not be supported for vector registers. If supported, this combination will leave the memory position untouched. This cannot be implemented as read-combine-write because this would not be thread-safe.
-%
-%\subsubsection{prefetch}
-%Prefetch memory operand into cache. Different variants can be specified by bit 0-3 of OP3 for format 2.4 and 2.8.
-%
-%\subsubsection{sign\_extend}
-%The input can be an 8-bit, 16-bit or 32-bit integer. This integer is sign-extended to produce a 64-bit output in a general purpose register or a scalar in a vector register. If the input is a vector then only the first element in each 64-bit block of the input vector is used. Floating point types cannot be used.
-%
-%\subsubsection{min and max}
-%min(src1,src2) = src1 \textless{} src2 ? src1 : src2
-%
-%max(src1,src2) = src1 \textless{} src2 ? src1 : src2
-%\vspace{2mm}
-%
-%The operands are treated as signed. There is also a version for unsigned integers:
-%\vspace{2mm}
-%
-%min\_u(src1,src2) = src1 \textless{} src2 ? src1 : src2
-%
-%max\_u(src1,src2) = src1 \textless{} src2 ? src1 : src2
-%\vspace{2mm}
-%
-%When the unsigned version is applied to floating point operands, it takes the absolute values of the operands, and the instruction name is changed:
-%\vspace{2mm}
-%
-%min\_abs(src1, src2) = min(abs(src1), abs(src2))
-%
-%max\_abs(src1, src2) = max(abs(src1), abs(src2))
-%\vspace{2mm}
-%
-%The handling of floating point NAN operands is determined by bit 22 of the mask register or the mumeric control register. If bit 22 is zero then the non-nan operand is output when one of the inputs is NAN, in accordance with the IEEE Standard 754-2008. If bit 22 is one then the NAN input is propagated.
-%\vspace{2mm}
-%
-%A NAN operand that is not propagated will generate a trap if flag bit 29 is set.
-%
-%\subsubsection{Bitwise boolean instructions}
-%These instructions include: and, and\_not, or, xor. Floating point operands are handled in the same way as integer operands.
-%
-%\subsubsection{Bit manipulation instructions}
-%The following instructions are provided for manipulating bits: 
-%\vspace{2mm}
-%
-%extract\_b: Extract bit number src2 in src1
-%
-%set\_b: Change bit number src2 in src1 to 1
-%
-%clear\_b: Change bit number src2 in src1 to 0
-%
-%toggle\_b: Change bit number src2 in src1 to its opposite
-%\vspace{2mm}
-%
-%A floating point operand in src1 is treated as an integer with the same size. The bit index in src2 is interpreted as an 8-bit unsigned integer regardless of the operand type.
-%\vspace{2mm}
-%
-%These instructions can be implemented with an 8-bit immediate constant for src2 instead of the larger constant that would be needed if we used AND, OR, XOR instructions for manipulating single bits. These instructions can also be used with floating point numbers, mainly for manipulating the sign bit.
-%
-%\subsubsection{mul\_add}
-%Fused multiply and add.
-%\vspace{2mm}
-%
-%dest = $\pm$ src1 $\pm$ (src2 $\cdot$ src3)
-%\vspace{2mm}
-%
-%The fused multiply-and-add instruction can often improve the performance of floating point code significantly.
-%\vspace{2mm}
-%
-%Only instruction formats that allow three operands are supported.
-%\vspace{2mm}
-%
-%The signs of the operands can be inverted as indicated by bits 0-3 of the OP3 field in formats that use the E2 template, including the extra format 2.5, with:
-%\vspace{2mm}
-%
-%bit 0: change sign of src1 in even-numbered vector elements
-%
-%bit 1: change sign of src1 in odd-numbered vector elements
-%
-%bit 2: change sign of src2$\cdot$src3 in even-numbered vector elements
-%
-%bit 3: change sign of src2$\cdot$src3 in odd-numbered vector elements
-%\vspace{2mm}
-%
-%This makes it possible to do multiply-and-add, multiply-and-subtract, multiply-and-reverse-subtract, etc. It can also do multiply with alternating add and subtract, which is useful in calculations with complex numbers. There is no sign change in other formats where the OP3 field is absent. An additional single-format version of mul\_add is supplied with four register operands and an OP3 field.
-%\vspace{2mm}
-%
-%The OP3 field is not used as shift count in formats 2.5 and 2.9.
-%\vspace{2mm}
-%
-%Support for integer operands is optional. Support for floating point operands is optional but desired.
-%
-%\subsubsection{add\_add}  \label{addAdd}
-%Two additions in one instruction.
-%\vspace{2mm}
-%
-%dest = $\pm$ src1 $\pm$ src2 $\pm$ src3
-%\vspace{2mm}
-%
-%Only instruction formats that allow three operands are supported.
-%\vspace{2mm}
-%
-%The signs of the operands can be inverted as indicated by bits 0-2 of the OP3 field in formats that use the E2 template, including the extra format 2.5:
-%\vspace{2mm}
-%
-%bit 0: change sign of src1
-%
-%bit 1: change sign of src2
-%
-%bit 2: change sign of src3
-%\vspace{2mm}
-%
-%There is no sign change in other formats where the OP3 field is absent. An additional single-format version of add\_add is supplied with four register operands and an OP3 field.
-%\vspace{2mm}
-%
-%The OP3 field is not used as shift count in formats 2.5 and 2.9.
-%\vspace{2mm}
-%
-%The precision for floating point operands is preferably better than the least significant bit of the numerically highest operand, but the intermediate result is not calculated with unlimited precision. The hardware implementation can adjust the exponents of all operands in the first clock cycle and use the adder network of the multiplication circuit.
-%\vspace{2mm}
-%
-%This instruction should only be supported if it can be implemented so that it is faster than two consecutive add instructions. It may be supported for integer operands or floating point or both. See also add\_add\_add page \pageref{addAddAdd}.
-%
-%\subsubsection{Compare instructions}
-%A compare instruction compares two source operands and stores the result in bit 0 of the destination. The condition is determined by an additional code stored in the third source operand when formats 0.0-0.3 or 2.0-2.3 are used. Formats that use the E2 template (2.4, 2.5, 2.8, 2.9) are coded differently: The condition code is in the OP3 field. The 16-bit IM2 field in the formats 2.5 and 2.9 is used as the second source operand. This operand is not shifted by OP3.
-%\vspace{2mm}
-%
-%The remaining bits of the result are copied from the mask register, or from the numeric control word if no mask is used. This is suitable when the result is used as a mask.
-%\vspace{2mm}
-%
-%The condition code is defined in this table:
-%
-%\begin{longtable} {|p{10mm}|p{100mm}|}
-%\caption{Condition codes for compare instruction} 
-%\label{table:conditionCodesForCompareInstruction} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Bit & \bfseries Meaning  \\
-%\hline
-%0   & Inverts the condition. \\
-%\hline
-%1-2 & Determines the condition: \newline
-%      0 = smaller,\newline
-%      1 = equal,\newline
-%      2 = bigger,\newline
-%      3 = unordered.         \\
-%\hline
-%3   & For integer operands: \newline
-%      0 = signed operands,\newline
-%      1 = unsigned operands.\newline
-%      For floating point operands:\newline
-%      This bit indicates the result if one or both operands are NAN. \\
-%\hline
-%\end{longtable}
-%
-%Compare instructions can be masked. Bit 0 of the result is equal to bit 1 of the mask register if bit 0 of the mask register is zero.
-%
-%
-%\subsection{Tiny format instructions}
-%\subsubsection{clear}
-%This instruction sets the length of a vector register to zero. All contents is lost. The register can then be regarded as unused.
-%
-%\subsubsection{Push and pop operations}
-%There are no push and pop instructions. A general purpose register R can be pushed on the stack with the following pair of tiny instructions:
-%
-%\begin{lstlisting}[frame=none]
-%   add sp,-8
-%   store [sp],R
-%\end{lstlisting}
-%
-%A general purpose register R can be popped from the stack with the following pair of tiny instructions:
-%
-%\begin{lstlisting}[frame=none]
-%   move R,[sp]
-%   sub sp,-8
-%\end{lstlisting}
-%
-%Note that the constant -8 can be contained in the 4-bit signed field RS, but the constant 8 cannot. This is the reason why we are adding and subtracting -8 rather than doing the opposite with +8.
-%\vspace{2mm}
-%
-%The assembler may support macros named push and pop for these sequences.
-%
-%\subsubsection{Saving and restoring vector registers} \label{saveRestoreVectorRegisters}
-%When saving a vector register with variable length, we do not want to save the maximum length when only part of the register is used. Therefore, we have the save\_cp and restore\_cp instructions which are intended for saving and restoring a vector register without using more memory than necessary.
-%\vspace{2mm}
-%
-%Note that the format for the saved image is implementation-dependent. Typically, the save\_cp instruction will save the length of the vector followed by as many bytes as indicated by the length, and the restore\_cp instruction will read the length and then read as many bytes as indicated by the length. 
-%\vspace{2mm}
-%
-%The microprocessor is allowed to compress the data in any way that it can handle sufficiently fast. For example, a boolean vector that uses only one bit per element can obviously be compressed to a much smaller size. The image for an unused vector register will typically contain only a few bytes of zero for the length.
-%\vspace{2mm}
-%
-%The software should never use the saved image for anything else than restoring a vector register on the same microprocessor model that saved it, because the image format is not compatible across microprocessors.
-%\vspace{2mm}
-%
-%The size of the saved image can be added to a pointer with the add\_cps instruction or subtracted from a pointer with the sub\_cps instruction. RS indicates the pointer, which can be r0-14 or r31 (stack pointer).
-%\vspace{2mm}
-%
-%A vector register V can be saved (pushed) on the stack with the following pair of tiny instructions:
-%
-%\begin{lstlisting}[frame=none]
-%   sub_cps sp,V
-%   save_cp [sp],V
-%\end{lstlisting}
-%
-%A vector register V can be restored (popped) from the stack with the following pair of tiny instructions:
-%
-%\begin{lstlisting}[frame=none]
-%   restore_cp V,[sp]
-%   add_cps sp,V
-%\end{lstlisting}
-%
-%The same instructions can be used for saving vector registers during a task switch. Unused vector registers will only use very little space when saved in this way.
-%\vspace{2mm}
-%
-%The size of the compressed image, as indicated by the add\_cps and sub\_cps instructions, must be a multiple of 8 when the stack pointer is used in order to keep the stack properly aligned. 
-%\vspace{2mm}
-%
-%It is allowed to use a smaller size that is not a multiple of 8 during a task switch where, typically, another pointer register is used. In this case, a control register must be provided to control the format of the saved image.
-%\vspace{2mm}
-%
-%The restore\_cp instruction is allowed to read more bytes than necessary, up to the maximum vector length plus 8 bytes, and discard any superfluous bytes afterwards when the actual length is known.
-%
-%\subsection{Single-format instructions that use general purpose registers and special registers}
-%
-%\subsubsection{read\_spe, write\_spe}
-%Read or write a special register. The following special registers are currently defined. The size is 64 bits. These registers are initialized with their default values at program start.
-%
-%\begin{longtable} {|p{15mm}|p{100mm}|}
-%\caption{List of special registers} 
-%\label{table:specialRegisters} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Special register number & \bfseries Meaning  \\
-%\hline
-%0 & Numeric control register (NUMCONTR)  \\
-%1 & Microprocessor brand ID  \\
-%2 & Microprocessor version number   \\
-%28 & Thread environment block pointer (THREADP)   \\
-%29 & Data section pointer (DATAP)  \\
-%\hline
-%\end{longtable}
-%
-%
-%\subsubsection{read\_cpb, write\_cpb}
-%Read or write processor capabilities register. These registers are used for indicating capabilities of the processor, such as support for optional instructions and limitations to vector lengths. The size is 64 bits. These registers are initialized with their default values at program start.
-%\vspace{2mm}
-%
-%The immediate constant in IM1 determines details of the operation:
-%
-%\begin{longtable} {|p{20mm}|p{90mm}|}
-%\caption{Meaning of immediate constant in read\_cpb and write\_cpb instructions} 
-%\label{table:readWriteCpbModes} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Bit number & \bfseries Meaning  \\
-%\hline
-%0  &  0: read/write the capabilities for the operand type specified in bit 5-7.\newline
-%      1: read the typical capabilities for all operand types / write the capabilities for all    
-%      relevant operand types.  \\
-%\hline
-%1  &  0: read the current value of the register, which may have been modified.\newline
-%      1: read the real capabilities of the hardware (cannot write.) \\
-%\hline
-%5-7 & Operand type for capabilities. \\
-%\hline
-%\end{longtable}
-%
-%
-%\begin{longtable} {|p{20mm}|p{90mm}|}
-%\caption{List of capabilities registers} 
-%\label{table:capabilitiesRegisters} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Capabilities register number & \bfseries Meaning  \\
-%\hline
-%0  &  Maximum vector length for general instructions. \\
-%\hline
-%1  &  Maximum vector length for permute instructions. \\
-%\hline
-%2  &  Maximum block size for permute instructions. \\
-%\hline
-%3  &  Maximum vector length for compress\_sparse and expand\_sparse. \\
-%\hline
-%8  &  Support for optional instructions in general purpose registers. Each bit indicates a specific instruction. \\
-%\hline
-%9  &  Support for optional instructions on scalars in vector registers. Each bit indicates a specific instruction. \\
-%\hline
-%10 &  Support for optional instructions on vectors. Each bit indicates a specific instruction. \\
-%\hline
-%\end{longtable}
-%
-%Changing the values of the maximum vector length has the following effects. If the maximum length is reduced below the physical capability then any attempt to make a longer vector will result in the reduced length. The behavior of vector registers that already had a longer length before the maximum length was reduced, is implementation dependent. If the maximum vector length is set to a higher value than the physical capability then any attempt to make a vector longer than the physical capability will cause a trap to facilitate emulation. Capabilities registers 0-3 can be increased for the purpose of emulation. The value of capabilities registers 0-3 must be powers of 2.
-%\vspace{2mm}
-%
-%Capabilities registers 8-9 can be modified for test purposes or to tell the software not to use a specific instruction. The same value will be returned when reading the register. Attempts to execute an instruction that is not supported will cause a trap, regardless of the value of the capabilities register.
-%
-%\subsubsection{read\_sys, write\_sys}
-%These instructions are for accessing various registers that are only accessible in mode.
-%
-%\subsubsection{read\_perf}
-%Read the internal clock count, number of instructions executed, or other performance-related counts.
-%
-%\subsubsection{read\_perfs}
-%Same as read\_perf. This instruction is serializing, which means that it cannot execute out of order.
-%
-%\subsubsection{popcount}
-%The popcount instruction counts the number of 1-bits in an integer. It can also be used for parity generation.
-%
-%\subsubsection{bitscan\_f}
-%Bit scan forward. 
-%\vspace{2mm}
-%
-%Find index to lowest set bit, i. e. highest X for which 
-%
-%(((1 \textless\textless{} X) - 1) \& src1)) == 0.
-%
-%\subsubsection{bitscan\_r}
-%Bit scan reverse. 
-%
-%Find index to highest set bit, i. e. highest X for which (1 \textless\textless{} X) $\leq$ src1.
-%
-%\subsubsection{round\_d2}
-%Round down to nearest power of 2, i. e. 1 \textless\textless{} bit\_scan\_reverse(src1).
-%
-%\subsubsection{round\_u2}
-%Round up to nearest power of 2, i. e. 
-%
-%(S \& (S-1)) == 0 ? S : 1 \textless\textless{}  (bit\_scan\_reverse(S) + 1),
-%
-%where S = src1.
-%
-%\subsubsection{shift\_add}
-%Shift and add. dest = src1 + (src2 \textless\textless{}  src3).
-%\vspace{2mm}
-%
-%src1 uses the same register as dest. src3 is an 8-bit signed immediate constant.
-%\vspace{2mm}
-%
-%Will shift right with zero extension if src3 is negative.
-%
-%\subsubsection{address}
-%Calculate an address relative to a pointer by adding a 32-bit sign-extended constant to a general purpose register or a special register. The pointer register can be r0-r27, THREADP (28), DATAP (29), IP (30) or SP(31).
-%
-%\subsubsection{cmp\_swap}
-%Atomic compare and swap instruction, used for thread synchronization and for lock-free data sharing between threads. src1 and src2 are register operands, src3 is a memory operand, which must be aligned to a natural address. All operands are treated as integers, regardless of the specified operand type. The operation is:
-%
-%\begin{lstlisting}[frame=none]
-%   temp = src3;
-%   if (temp == src1) src3 = src2;
-%   return temp;
-%\end{lstlisting}
-%
-%Further atomic instructions can be implemented, if needed, in format 2.8 with OP1 = 1 and increasing values of OP2.
-%
-%\subsection{Single-format instructions with g. p. register input and vector register output, or vice versa}
-%
-%\subsubsection{gp2vec}
-%The value of a general purpose register is copied to a scalar in a vector register. The length will be the operand size. No type conversion is made.
-%
-%\subsubsection{vec2gp}
-%The first element of a vector register is copied to a general purpose register. If an integer type less than 64 bits is specified then the value is sign-extended to 64 bits. If a single-precision float type is specified then the value is zero-extended to 64 bits. No other type conversion is made.
-%
-%\subsubsection{set\_len}
-%Sets the length of a vector register to the number of bytes specified by a general purpose register. If the specified length is more than the maximum length for the specified operand type then the maximum length will be used.
-%\vspace{2mm}
-%
-%If the output vector is longer than the input vector then the extra elements will be zero. If the output vector is shorter than the input vector then the extra elements will be discarded. 
-%
-%\subsubsection{get\_len}
-%Gets the length of a vector register in bytes. The result is stored in a general purpose register.
-%
-%\subsubsection{set\_num}
-%Same as set\_len, the length is multiplied by the operand size.
-%
-%\subsubsection{get\_num}
-%Same as get\_len, the length is divided by the operand size.
-%
-%\subsubsection{mask\_length}
-%Make a boolean vector to mask the first n elements of a vector, where \\
-%n = RS / (operand size). The output vector RD will have the same length as the input vector RD. RS indicates the length of the part that is enabled by the mask. IM1 contains the following option bits: \\
-%bit 0 = 0: bit 0 will be 1 in the first n elements in the output and 0 in the rest. \\
-%bit 0 = 1: bit 0 will be 0 in the first n elements in the output and 1 in the rest. \\
-%bit 1 = 1: set bit 1 of all elements in the output to 1. \\
-%bit 2 = 1: copy bit 1 of each element from input vector RD. \\
-%bit 3 = 1: copy bit 1 of each element from the numeric control register. \\
-%bit 4 = 1: copy remaining bits from input vector RD. \\
-%bit 5 = 1: copy remaining bits from the numeric control register. \\
-%Output bits that are not set by any of these options will be zero.
-%
-%\subsubsection{make\_sequence}
-%Makes a vector of length RS bytes. The number of elements is RS/(operand size).
-%The first element is equal to IM1, the next element is IM1+1, etc.
-%Support for floating point is optional.
-%
-%
-%\subsection{Other single-format instructions that may change the length of a vector}
-%
-%\subsubsection{bits2bool}
-%Expand contiguous bits in a vector register to a boolean vector with one bit in each element.
-%
-%\subsubsection{bool2bits}
-%Convert a boolean vector of n elements to n contiguous bits in a vector register.
-%The length of the destination vector will be a power of 2 sufficient to hold n bits.
-%
-%\subsubsection{shift\_expand}
-%The length of a vector is expanded by the specified number of bytes by adding zero-bytes at the low end and shifting all bytes up. If the resulting length is more than the maximum vector length for the specified operand type then the upper bytes are lost.
-%
-%\subsubsection{shift\_reduce}
-%The length of a vector is reduced by the specified number of bytes by removing bytes at the low end and shifting all bytes down. If the resulting length is less than zero then the result will be a zero-length vector. The specified operand type is ignored.
-%
-%\subsubsection{compress}
-%The elements of a vector are converted to half the element size. The length of the output vector will be half the length of the input vector. The OT field specifies the operand type of the input vector. Double precision floating point numbers are converted to single precision. Integer elements are converted to half the size by discarding the upper bits. Support for the following conversions are optional: single precision float to half precision, quadruple precision to double precision, 8-bit integer to 4-bit.
-%\vspace{2mm}
-%
-%If the length of the input vector differs from the length specified by RS, then the length is converted to RS before compression.
-%
-%\subsubsection{compress\_ss}
-%Same as compress. Integers are treated as signed and compressed with saturation. Floating point operands cannot be used. This instruction is optional.
-%
-%\subsubsection{compress\_us}
-%Same as compress. Integers are treated as unsigned and compressed with saturation. Floating point operands cannot be used. This instruction is optional.
-%
-%\subsubsection{expand}
-%This is the opposite of compress. The output vector has the specified length and the input vector has half this length. The OT field specifies the operand type of the output vector. Single precision floating point numbers are converted to double precision. Integers are converted to the double size by sign-extension. Support for the following conversions are optional: half precision float to single precision, double precision to quadruple precision, 4-bit integer to 8-bit.
-%\vspace{2mm}
-%
-%If the length of the input vector differs from RS/2 then the length is converted before expansion. If the resulting length exceeds the maximum vector length for the specified operand type then the extra elements are lost.
-%
-%\subsubsection{expand\_us}
-%Same as expand. Integers are expanded by zero-extension. Floating point operands cannot be used. 
-%
-%
-%\subsection{Single-format instructions that can move data horizontally from one vector element to another}
-%The latency of these instructions may depend on the distance of moving (specified by RS) for very long vectors.
-%
-%\subsubsection{extract}
-%Extract one element of a vector into a scalar in a vector register. An index out of range will produce zero. An operand size of 16 bytes can be used, even if this size is not otherwise supported.
-%
-%\subsubsection{insert}
-%Replace one element of a vector by inserting a scalar into the position indicated by the index. An index out of range will leave the vector unchanged. An operand size of 16 bytes can be used, even if this size is not otherwise supported.
-%
-%\subsubsection{shift\_up}
-%Shift elements of a vector up by the number of elements indicated by RS. The lower RS elements of the output will be zero, the upper RS elements of the input are lost.
-%\vspace{2mm}
-%
-%This instruction differs from shift\_expand by indicating the shift count as a number of elements rather than a number of bytes, and by not changing the length of the vector.
-%
-%\subsubsection{shift\_dn}
-%Shift elements of a vector down by the number of elements indicated by RS. The upper RS elements of the output will be zero, the lower RS elements of the input are lost.
-%\vspace{2mm}
-%
-%This instruction differs from shift\_reduce by indicating the shift count as a number of elements rather than a number of bytes, and by not changing the length of the vector.
-%
-%\subsubsection{permute}
-%This instruction permutes the elements of a vector. The vector is divided into blocks of size RS bytes each. The block size must be a power of 2 and a multiple of the operand size. Elements can be moved arbitrarily between positions within each block, but not between blocks. Each element of the output vector is a copy of an element in the input vector, selected by the corresponding index in an index vector. The indexes are relative to the start of the block they belong to, so that an index of zero will select the first element in the block of the input vector and insert it in the corresponding position of the output vector. The same element in the input vector can be copied to multiple elements in the output vector. An index out of range will produce a zero. The indexes are interpreted as an integers regardless of the operand type.
-%\vspace{2mm}
-%
-%The permute instruction has two versions. The first version specifies the indexes in a vector with the same length and element size as the input vector.
-%\vspace{2mm}
-%
-%The second version specifies the indexes as a 32-bit immediate constant with 4 bits per element. This constant is split into a maximum of 8 elements with 4 bits in each. If the blocks have more than 8 elements each then the sequence of 8 elements is repeated to fill a block. The same pattern of indexes will be applied to all blocks in this version of the permute instruction.
-%\vspace{2mm}
-%
-%The maximum block size for the permute instruction is implementation-dependent and given by a special register. The reason for this limitation of block size is that the complexity of the hardware grows quadratically with the block size. A full permutation is possible if the vector length does not exceed the maximum block size. A trap is generated if RS is bigger than the maximum block size.
-%\vspace{2mm}
-%
-%There are two ways to combine the outputs of multiple permute instructions. One method is to use indexes out of range to produce zeroes for unused outputs and then OR'ing the outputs. Another method is to use masks to combine the outputs.
-%\vspace{2mm}
-%
-%Permute instructions are useful for reordering data, for transposing a matrix, etc. 
-%\vspace{2mm}
-%
-%Permute instructions can also be used for parallel table lookup when the block size is big enough to contain the entire table.
-%\vspace{2mm}
-%
-%Finally, permute instructions can be used for gathering and scattering data within an area not bigger than the vector length or the block size.
-%
-%\subsubsection{broadcast}
-%Copies the first element of the input vector to all elements of the output vector. An element size of 16 bytes (128 bits) is supported if the maximum vector length is more than 16 bytes, even if this size is not otherwise supported.
-%
-%
-%\subsection{Other single-format vector instructions}
-%
-%\subsubsection{Saturated arithmetic} \label{saturatedArithmeticInstructions}
-%add\_ss, add\_us, sub\_ss, sub\_us, mul\_ss, mul\_us, shl\_ss, shl\_us.
-%\vspace{2mm}
-%
-%These instructions are used for arithmetic operations with saturation. An overflow will result in the maximum value for the given operand size. An underflow will result in the minimum value.
-%\vspace{2mm}
-%
-%Support for these instructions is optional.
-%
-%\subsubsection{Add with carry and subtract with borrow} \label{addWithCarryInstruction}
-%add\_c, sub\_b
-%\vspace{2mm}
-%
-%dest and src1 are vectors of two integers. src2 is a vector of integers, where only the first element is used.
-%\vspace{2mm}
-%
-%add\_c: 
-%\begin{lstlisting}[frame=none]
-%   sum = src1[0] + src2[0] + (src1[1] & 1)
-%   dest[0] = bit 0-63 of sum 
-%   dest[1] = bit 64 of sum
-%\end{lstlisting}
-%
-%sub\_b:
-%\begin{lstlisting}[frame=none]
-%   sum = src1[0] - src2[0] - (src1[1] & 1)
-%   dest[0] = bit 0-63 of sum 
-%   dest[1] = bit 64 of sum
-%\end{lstlisting}
-%
-%Support for these instructions is optional. Longer vectors are not supported. See page 
-%\pageref{highPrecisionArithmetic} for an alternative for longer vectors.
-%
-%\subsubsection{Arithmetic instructions with overflow check} \label{instructionsWithOverflowCheck}
-%add\_oc, sub\_oc, subr\_oc, mul\_oc, div\_oc.
-%\vspace{2mm}
-%
-%These instructions use the even-numbered vector elements for arithmetic instructions. Each following odd-numbered vector element is used for overflow detection. If the first source operand is a scalar then the result operand will be a vector with two elements.
-%\vspace{2mm}
-%
-%Overflow conditions are indicated with the following bits:
-%\vspace{2mm}
-%
-%bit 0. Unsigned integer overflow (carry).
-%
-%bit 1. Signed integer overflow.
-%
-%bit 2. Floating point overflow.
-%
-%bit 3. Floating point invalid operation.
-%\vspace{2mm}
-%
-%The values are propagated so that the overflow result of the operation is OR'ed with the corresponding values of both input operands.
-%\vspace{2mm}
-%
-%These instructions are optional.
-%
-%\subsubsection{Extended division} \label{extendedDivisionInstruction}
-%div\_ex\_s, div\_ex\_u
-%\vspace{2mm}
-%
-%These instructions are optional. They may be supported for both scalars and vectors, for scalars only, or not at all.
-%
-%\subsubsection{byte\_reverse}
-%This instruction reverses the order of bytes in an integer. It can be used when reading and writing binary data files with big endian data organization.
-%
-%\subsubsection{read\_spev}
-%The value of the RT field indicates a special register to read. The output is a vector register with length specified by RS.
-%\vspace{2mm}
-%
-%The following special registers are currently defined:
-%
-%\begin{longtable} {|p{15mm}|p{100mm}|}
-%\caption{Special registers that can be read into vectors} 
-%\label{table:specialVectorRegisters} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Special register number & \bfseries Meaning  \\
-%\hline
-%0 & Numeric control register (NUMCONTR). The value is broadcast into all elements of the destinationregister with the indicated operand size and length.  \\
-%\hline
-%1 & Name of processor. The output is a zero-terminated UTF-8 string containing the brandname and model name of the microprocessor. \\
-%\hline
-%\end{longtable}
-%
-%\subsubsection{replace}
-%All elements of src1 are replaced by the integer or floating point constant src2.
-%\vspace{2mm}
-%
-%When used without a mask, the constant is simply broadcast to make a vector of the same length as src1. When used with a mask, the elements of src1 are selectively replaced. Elements that are not selected by the mask will be zero or unchanged, depending on bit 1 in the mask.
-%
-%\subsubsection{make\_mask}
+Копирование значения из находящегося в памяти операнда, регистра, или непосредственно заданной константы в регистр. Если приёмник --- векторный регистр, а источник --- непосредственно заданная константа, то результат будет скаляром. Значение размножено не будет, поскольку нет никакого иного входного операнда, который бы указывал длину вектора. Если желателен вектор, то используйте команду broadcast.
+
+Команда move с непосредственно заданным операндом  --- предпочтительный метод обнуления регистра.
+
+Команда move  имеет несколько дополнительных малых и одноформатных вариантов. Ассемблер, как правило, выберет самый короткий вариант, в который помещаются указанные операнды.
+
+\subsubsection{store}
+Операнды--источники и операнды--приёмники меняются ролями, так что значение из RD записывается в находящийся в памяти операнд. Допускаются только форматы, которые указывают находящийся в памяти операнд (скалярный, либо векторный без размножения).
+
+Размер находящегося в памяти операнда определяется полем размера операнда (OS), когда указан находящийся в памяти скалярный операнд, или длиной векторного регистра в RS, когда указан находящийся в памяти векторный операнд.
+
+Аппаратура должна быть в состоянии обрабатывать размеры находящихся в памяти операндов, не являющиеся степенями двойки, не используя при этом дополнительной памяти (чтение и перезапись за пределами находящегося в памяти операнда --- не допускаются, разве что обращение из других потоков блокировано во время выполнения операции, и подавляются исключения отсутствия доступа). Разрешается записывать операнд по кусочкам.
+
+Замаскированная операция с разрядами маски №№ 0 и 1, равными нулю одновременно, запишет в память ноль.
+
+Замаскированная операции с разрядом №0, равным 0, и разрядом №1, равным единице, для векторных регистров может поддерживаться, а может и не поддерживаться. Если поддерживается, то эта комбинация оставит ячейку памяти без изменения, и не может быть реализована как чтение, совмещённое с записью, поскольку это не было бы потокобезопасно.
+
+\subsubsection{prefetch}
+Предвыборка находящегося в памяти операнда в кэш. Разные варианты могут указываться разрядами №№0--3 поля OP3 форматов 2.4 и 2.8.
+
+\subsubsection{sign\_extend}
+Входным операндом может быть 8--разрядное, 16--разрядное, или 32--разрядное целое число. Это целое число расширяется знаком, чтобы получить 64--разрядный результат в регистре общего назначения или скаляр в векторном регистре. Если входной операнд --- вектор, то в каждом 64--разрядном блоке используется только первый элемент. Вещественные типы использоваться не могут.
+
+\subsubsection{min and max}
+min(src1,src2) = src1 \textless{} src2 ? src1 : src2
+
+max(src1,src2) = src1 \textless{} src2 ? src1 : src2
+
+Операнды рассматриваются как знаковые. Есть также версия для беззнаковых целых:
+
+min\_u(src1,src2) = src1 \textless{} src2 ? src1 : src2
+
+max\_u(src1,src2) = src1 \textless{} src2 ? src1 : src2
+
+Когда беззнаковая версия применяется к вещественным операндам, она берёт абсолютные величины операндов, и имя команды изменяется:
+
+min\_abs(src1, src2) = min(abs(src1), abs(src2))
+
+max\_abs(src1, src2) = max(abs(src1), abs(src2))
+
+Обработка вещественных операндов, являющихся нечислами (NAN), определяется разрядом №22 регистра маски или вещественного управляющего регистра. Если разряд №22 равен нулю, то, в соответствии с  IEEE Standard 754-2008, результатом является не являющийся нечислом операнд. Если разряд №22 равен единице, то входной операнд, являющийся NAN, распространяется дальше.
+
+Являющийся NAN операнд, который не является распространяемым, породит ловушку, если установлен флаговый разряд №29.
+
+\subsubsection{Поразрядные логические команды}
+Это следующие команды: and, and\_not, or, xor. Вещественные операнды обрабатываются точно так же, как и целочисленные.
+
+\subsubsection{Команды манипуляции разрядами}
+Для манипуляции разрядами предоставляются следующие команды: 
+
+extract\_b: выделить разряд с номером src2 из src1
+
+set\_b: заменить в src1 разряд с номером src2 на 1
+
+clear\_b: заменить в src1 разряд с номером src2 на 0
+
+toggle\_b: инвертировать в src1 разряд с номером src2
+
+Вещественный операнд в src1 рассматривается как целое число такого же размера. Индекс разряда в src2, независимо от типа операнда, интерпретируется как 8--разрядное беззнаковое целое число.
+
+Эти команды могут быть реализованы с 8--разрядной непосредственно заданной константой для src2, вместо большей константы, которая потребовалась бы, если бы мы использовали команды AND, OR, XOR для манипулирования одиночными разрядами. Эти команды могут также использоваться с вещественными числами, в основном для манипулирования знаковым разрядом.
+
+\subsubsection{mul\_add}
+Совмещённые умножение и сложение.
+
+dest = $\pm$ src1 $\pm$ (src2 $\cdot$ src3)
+
+Команда совмещённого умножения и сложения часто может значительно улучшить производительность вещественного кода.
+
+Поддерживаются только форматы, допускающие три операнда.
+
+Знаки операндов могут быть изменены, что указывается в разрядах №№0--3 поля OP3 в форматах, использующих шаблон E2, включая дополнительный формат 2.5, при этом
+
+разряд 0: изменить знак у элементов вектора src1 с чётными номерами
+
+разряд 1: изменить знак у элементов вектора src1 с нечётными номерами
+
+разряд 2: изменить знак у элементов вектора src2$\cdot$src3  с чётными номерами
+
+разряд 3: изменить знак у элементов вектора src2$\cdot$src3  с нечётными номерами
+
+Команда делает возможным выполнение умножения--и--сложения, умножения--и--вычитания, умножения--и обратного--вычитания, и т.п. Можно также выполнять умножение с чередующимися сложением и вычитанием, что полезно при вычислениях с комплексными числами. В других форматах, в которых поле OP3 отсутствует, смены знака нет. Поддерживается дополнительная одноформатная версия mul\_add, с четырьмя регистровыми операндами и полем OP3.
+
+Поле OP3 не используется как счётчик сдвига в форматах 2.5 и 2.9.
+
+Поддержка целочисленных операндов --- необязательна. Поддержка вещественных операндов --- необязательна, но желательна.
+
+\subsubsection{add\_add}  \label{addAdd}
+Два сложения в одной команде.
+
+dest = $\pm$ src1 $\pm$ src2 $\pm$ src3
+
+Поддерживаются только форматы, допускающие три операнда.
+
+Знаки операндов могут быть изменены, что указывается в разрядах №№0--2 поля OP3 в форматах, использующих шаблон E2, включая дополнительный формат 2.5, при этом
+
+bit 0: изменить знак src1
+
+bit 1: изменить знак src2
+
+bit 2: изменить знак src3
+
+В других форматах, в которых поле OP3 отсутствует, смены знака нет. Поддерживается дополнительная одноформатная версия add\_add, с четырьмя регистровыми операндами и полем OP3. 
+
+Поле OP3 не используется как счётчик сдвига в форматах 2.5 и 2.9.
+
+Желательна точность вещественных операндов, меньшая единицы самого младшего разряда численно самого большого операнда, но промежуточный результат не вычисляется с неограниченной точностью. Аппаратная реализация может подстроить экспоненты для всех операндов за первый такт, и использовать сеть сумматора цепи умножения.
+
+Данную команду следует поддерживать, только если её можно реализовать так, чтобы она была быстрее двух последовательных команд сложения. Она может поддерживаться для целочисленных операндов, вещественных операндов, или и для тех, и для других. См. также команду add\_add\_add (с.~\pageref{addAddAdd}).
+
+\subsubsection{Команды сравнения}
+Команда сравнения сравнивает два операнда--источника и сохраняет результат в разряде №0 приёмника. Когда используются форматы 0.0-0.3 или 2.0-2.3, условие определяется добавочным кодом, сохранённым в третьем операнде--источнике. Форматы, использующие шаблон E2 (2.4, 2.5, 2.8, 2.9) кодируются иначе: код условия содержится в поле OP3. Шестнадцатиразрядное поле IM2 форматов  2.5 и 2.9 используется как второй операнд--источник, который не сдвигается на  OP3.
+
+Оставшиеся разряды результата копируются из регистра маски, или из численного управляющего слова, если маска не используется. Это подходит, когда результат используется как маска.
+
+Коды условий определены в следующей таблице:
+
+\begin{longtable} {|l|p{100mm}|}
+\caption{Коды условий для команд сравнения} 
+\label{table:conditionCodesForCompareInstruction} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Разряд & \bfseries Смысл      \\ \hline
+0                & Инвертирует условие. \\ \hline
+1-2              & Определяет условие: \newline
+				      0 = меньше,\newline
+				      1 = равно,\newline
+				      2 = больше,\newline
+				      3 = неупорядочено.         \\ \hline
+3   			& Для целочисленных операндов: \newline
+			      0 = знаковые операнды,\newline
+			      1 = беззнаковые операнды.\newline
+			      Для вещественных операндов:\newline
+			      данный разряд указывает результат, если один операнд, либо оба, являются нечислами (NAN). \\ \hline
+\end{longtable}
+
+Команды сравнения могут быть замаскированы. Разряд №0 результата равен разряду №1 регистра маски, если разряд №0 регистра маски равен нулю.
+
+\subsection{Команды малого формата}
+\subsubsection{clear}
+Данная команда устанавливает длину векторного регистра равной нулю. Всё содержимое теряется. Регистр может затем рассматриваться как неиспользуемый.
+
+\subsubsection{Операции push и pop}
+Команд push и pop нет. Регистр общего назначения R можно втолкнуть в стек с помощью следующей пары малых команд:
+\begin{verbatim}
+    add sp,-8
+    store [sp],R
+\end{verbatim}
+
+Регистр общего назначения R можно вытолкнуть из стека с помощью следующей пары малых команд:
+\begin{verbatim}
+    move R,[sp] 
+    sub sp,-8
+\end{verbatim}
+Обратите внимание, что константа -8 может содержаться в 4--разрядном знаковом поле RS, а константа 8 --- нет. Именно по этой причине мы прибавляем и вычитаем -8, а не выполняем обратные операции с +8.
+
+Для этих последовательностей ассемблер может поддерживать макросы с именами push и pop.
+
+\subsubsection{Сохранение и восстановление векторных регистров} \label{saveRestoreVectorRegisters}
+При сохранении векторного регистра переменной длины мы не хотим сохранять максимальную длину, когда используется только часть регистра. Как следствие, вы имеем команды save\_cp и restore\_cp, предназначенные для сохранения и восстановления векторных регистров без использования большего объёма памяти, нежели необходимо.
+
+Обратите внимание, что формат сохранённого образа зависит от реализации. Как правило, команда save\_cp сохранит длину вектора, за которой  следует столько байтов, сколько указано длиной, а команда restore\_cp прочтёт длину, а затем прочтёт столько байтов, сколько указано длиной.
+
+Микропроцессору разрешается сжимать данный любым способом, который можно обработать достаточно быстро. Например, булев вектор, использующий только один разряд в каждом элементе, может, очевидно, быть сжат до гораздо меньшего размера. Образ неиспользуемого векторного регистра будет, как правило, содержать несколько нулевых байтов для длины.
+
+Программному обеспечению никогда не следует использовать сохранённый образ ни для чего иного, нежели восстановление векторного регистра на той же модели микропроцессора, что сохранила его, поскольку формат образа несовместим у разных моделей.
+
+Размер сохранённого образа можно прибавить к указателю командой add\_cps или вычесть из указателя командой sub\_cps. Поле RS задаёт указатель, которым может быть r0--14 или r31 (указатель стека).
+
+Векторный регистр V можно сохранить в стеке (втолкнуть в стек) с помощью следующей пары малых команд: 
+\begin{verbatim}
+   sub_cps sp,V
+   save_cp [sp],V
+\end{verbatim}
+
+Векторный регистр V можно восстановить из стека (вытолкнуть) с помощью следующей пары малых команд:
+\begin{verbatim}
+   restore_cp V,[sp]
+   add_cps sp,V
+\end{verbatim}
+
+Те же команды можно использовать для сохранения регистров при переключении задач. При сохранении таким способом, неиспользуемые векторные регистры будут использовать очень мало места.
+
+Размер сжатого образа, указываемого командами add\_cps и sub\_cps, при использовании указателя стека должен быть кратным 8, чтобы сохранить должное выравнивание стека. 
+
+При переключении задач, когда, как правило, используется другой указатель команд, разрешается использовать меньший размер, не кратный 8. В этом случае для управления форматом сохранённого образа должен быть предоставлен управляющий регистр.
+
+Команде restore\_cp разрешается читать больше байтов, чем необходимо, вплоть до значения, равного максимальной длине вектора плюс 8 байт, и отбрасывать впоследствии, когда станет известна действительная длина, любые избыточные байты.
+
+\subsection{Одноформатные команды, использующие регистры общего назначения и специальные регистры}
+\subsubsection{read\_spe, write\_spe}
+Чтение или запись специального регистра. Ниже указаны определённые на данный момент специальные регистры. Разрядность каждого равна 64. Эти регистры инициализируются их принятыми по умолчанию значениями в момент запуска программы.
+
+\begin{longtable} {|l|l|}
+\caption{Список специальных регистров} 
+\label{table:specialRegisters} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Номер специального регистра & \bfseries Смысл  \\ \hline
+0                                     & Численный управляющий регистр (NUMCONTR).  \\
+1 									  & Идентификатор (ID) марки микропроцессора  \\
+2                                     & Номер версии микропроцессора.   \\
+28                                    & Указатель блока окружения потока (THREADP).   \\
+29                                    & Указатель секции данных (DATAP).  \\
+\hline
+\end{longtable}
+
+\subsubsection{read\_cpb, write\_cpb}
+Чтение или запись регистра возможностей процессора. Эти регистры используются для указания возможностей процессора, таких, как поддержка необязательных команд и ограничения на длину вектора. Разрядность такого регистра равна 64. В момент запуска программы эти регистры инициализируются принятыми для них по умолчанию значениями.
+
+Находящаяся в IM1 непосредственно заданная константа определяет детали операции:
+
+\begin{longtable} {|p{20mm}|p{128mm}|}
+\caption{Смысл непосредственно заданной константы в командах read\_cpb и write\_cpb} 
+\label{table:readWriteCpbModes} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Номер разряда & \bfseries Смысл  \\ \hline
+0                       &  0: чтение/запись возможностей для типа операнда, указанного в разрядах №№5-7.\newline
+                           1: чтение типичных возможностей для всех типов операндов / запись возможностей для всех соответствующих типов операндов.  \\ \hline
+1                       &  0: чтение текущего значения регистра, которое, возможно, изменено.\newline
+                           1: чтение реальных возможностей аппаратуры (записывать нельзя). \\ \hline
+5-7                     & Тип операнда для возможностей. \\ \hline
+\end{longtable}
+
+\begin{longtable} {|p{20mm}|p{110mm}|}
+\caption{Список регистров возможностей} 
+\label{table:capabilitiesRegisters} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Номер регистра возможностей & \bfseries Смысл  \\ \hline
+0  &  Максимальная длина вектора для команд общего назначения. \\ \hline
+1  &  Максимальная длина вектора для команд перестановки. \\ \hline
+2  &  Максимальная длина блока для команд перестановки. \\ \hline
+3  &  Максимальная длина вектора для compress\_sparse и expand\_sparse. \\ \hline
+8  &  Поддержка необязательных команд, работающих с регистрами общего назначения. Каждый разряд отвечает за свою команду. \\ \hline
+9  &  Поддержка необязательных команд, работающих со скалярами в векторных регистрах. Каждый разряд отвечает за свою команду.  \\ \hline
+10 &  Поддержка необязательных команд, работающих с векторами. Каждый разряд отвечает за свою команду.  \\ \hline
+\end{longtable}
+
+Изменение значений максимальной длины вектора оказывает следующее влияние. Если максимальная длина уменьшается до величины, меньшей физически возможной, то любая попытка сделать более длинный вектор даст вектор с уменьшенной длиной. Поведение векторных регистров, у которых до уменьшения максимальной длины уже была большая длина, зависит от реализации. Если максимальная длина устанавливается равной значению, которое больше физически возможного, то любая попытка сделать вектор размера, большего физически возможного, вызовет ловушку, для облегчения эмуляции. Регистры возможностей с номерами 0--3 для целей эмуляции могут быть увеличены. Значение регистров возможностей с номерами 0--3 должно быть степенью двойки.
+
+Регистры возможностей с номерами 8--9 могут модифицироваться, для тестовых целей или для того, чтобы сообщить программному обеспечению: \glqq не используй конкретные команды\grqq. То же значение будет возвращаться при чтении регистра. Попытка выполнить неподдерживаемую команду вызовет ловушку, независимо от значения регистра возможностей.
+
+\subsubsection{read\_sys, write\_sys}
+Эти команды предназначены для обращения к различным регистрам, доступным только для чтения.
+
+\subsubsection{read\_perf}
+Прочесть внутренний счётчик тактов, количество выполненных команд, или иные связанные с производительностью счётчики.
+
+\subsubsection{read\_perfs}
+То же, что и read\_perf. Данная команда сериализуется. Это означает, что она не может выполняться неупорядоченно.
+
+\subsubsection{popcount}
+Команда popcount считает количество единичных разрядов в целом числе. Она может также использоваться для генерирования чётности.
+
+\subsubsection{bitscan\_f}
+Сканировать разряды вперёд.
+
+Найти индекс самого младшего единичного разряда, т.е. наибольшее  X, для которого
+
+(((1 $\ll$ X) - 1) \& src1)) == 0.
+
+\subsubsection{bitscan\_r}
+Сканировать разряды назад.
+
+Найти индекс самого старшего единичного разряда, т.е. наибольшее  X, для которого (1 $\ll$ X) $\leq$ src1.
+
+\subsubsection{round\_d2}
+Округлить к ближайшей степени двойки, т.е. 1 $\ll$ bit\_scan\_reverse(src1).
+
+\subsubsection{round\_u2}
+Округлить к ближайшей большей степени двойки, т.е.
+
+(S \& (S-1)) == 0 ? S : 1 $\ll$  (bit\_scan\_reverse(S) + 1),
+
+где S = src1.
+
+\subsubsection{shift\_add}
+Сдвинуть и сложить, dest = src1 + (src2 $\ll$  src3); src1 использует тот же регистр, что dest; src3 --- 8--разрядная знаковая непосредственно заданная константа.
+
+Если src3 --- отрицательно, то будет выполняться сдвиг вправо.
+
+\subsubsection{address}
+Вычислить адрес относительно указателя, сложив 32--разрядную расширенную знаком константу с регистром общего назначения или специальным регистром. Регистром--указателем может быть r0-r27, THREADP (28), DATAP (29), IP (30) или SP(31).
+
+\subsubsection{cmp\_swap}
+Команда атомарного сравнения и обмена, используемая для синхронизации и безблокировочного разделения данных между потоками; src1 и src2 --- регистровые операнды; src3 --- находящийся в памяти операнд, который должен быть выровнен по естественному адресу. Все операнды рассматриваются как целочисленные, независимо от указанного типа операнда. Операция выполняется так:
+\begin{verbatim}
+   temp = src3;
+   if (temp == src1) src3 = src2;
+   return temp;
+\end{verbatim}
+
+Если необходимо, могут быть реализованы и другие атомарные команды (в формате 2.8 с OP1 = 1 и увеличивающимися значениями в OP2).
+
+\subsection{Одноформатные команды с РОН в качестве входного операнда и векторным регистром в качестве выходного, или наоборот}
+\subsubsection{gp2vec}
+Значение регистра общего назначения копируется в находящийся в векторном регистре скаляр. Длина будет равна размеру операнда. Никаких преобразований типа не выполняется.
+
+\subsubsection{vec2gp}
+Первый элемент векторного регистра копируется в регистр общего назначения. Если указан целочисленный тип, имеющий разрядность, меньшую 64, то значение знаком расширяется до 64 разрядов. Если указан тип \glqq вещественное число одинарной точности\grqq, то значение расширяется нулём до 64 разрядов. Никаких иных преобразований типов не выполняется.
+
+\subsubsection{set\_len}
+Устанавливает длину векторного регистра равной количеству байт, указанному в регистре общего назначения. Если указанная длина больше длины, максимально допустимой для указанного типа операнда, то будет использоваться максимальная длина.
+
+Если выходной вектор длиннее входного, то дополнительные элементы будут нулями. Если выходной вектор --- короче входного, то лишние элементы будут отброшены.
+
+\subsubsection{get\_len}
+Получает длину векторного регистра (в байтах). Результат сохраняется в регистре общего назначения.
+
+\subsubsection{set\_num}
+То же, что и set\_len, но длина умножается на размер операнда.
+
+\subsubsection{get\_num}
+То же, что и  get\_len, но длина делится на размер операнда.
+
+\subsubsection{mask\_length}
+Сделать булев вектор, для того, чтобы замаскировать первые n элементов вектора, где n = RS / (размер операнда). Выходной вектор RD будет иметь ту же длину, что и входной вектор RD. RS указывает длину части, которая разрешается маской. IM1 содержит следующие разряды опций:\\
+разряд №0 = 0: разряд №0 будет равен 1 в первых n элементах результата, и 0 --- в остальных; \\
+разряд №0 = 1: разряд №0 будет равен 0 в первых n элементах результата, и 1--- в остальных; \\
+разряд №1 = 1: разряд №1 всех элементов результата равен 1; \\
+разряд №2 = 1: копировать разряд №1 каждого элемента из входного вектора RD; \\
+разряд №3 = 1: копировать разряд №1 каждого элемента из численного управляющего регистра; \\
+разряд №4 = 1: копировать оставшиеся разряды из входного вектора RD; \\
+разряд №5 = 1: копировать оставшиеся разряды из численного управляющего регистра. \\
+Разряды результата, не установленные никакой из этих опций, будут нулями.
+
+\subsubsection{make\_sequence}
+Сделать вектор, длина которого равна RS байтов. Количество элементов равно RS/(размер операнда). Первый элемент равен IM1, следующий элемент --- IM1+1, и т.д. Поддержка вещественных чисел --- необязательна.
+
+
+\subsection{Другие одноформатные команды, которые могут изменять длину вектора}
+\subsubsection{bits2bool}
+Расширить смежные разряды векторного регистра до булева вектора, с одним разрядом в каждом элементе
+
+\subsubsection{bool2bits}
+Преобразовать булев вектор из n элементов в n непрерывных разрядов векторного регистра. Длина результирующего вектора будет равна степени двойки, достаточной для хранения n разрядов.
+
+\subsubsection{shift\_expand}
+Длина вектора увеличивается на указанное количество байтов, посредством сдвига всех байтов вправо и добавления нулевых младших байтов. Если получившаяся длина больше  максимальной длины вектора для указанного типа операнда, то старшие байты теряются.
+
+\subsubsection{shift\_reduce}
+Длина вектора уменьшается на указанное количество байтов, посредством сдвига всех байтов вправо. Если получившаяся длина меньше нуля, то результатом будет вектор нулевой длины. Указываемый тип операнда --- игнорируется.
+
+\subsubsection{compress}
+Элементы вектора преобразуются к элементам половинного размера. Длина результирующего вектора будет равна половине длины входного вектора. Поле OT указывает тип операнда входного вектора. Вещественные числа двойной точности преобразуются в числа одинарной точности. Целочисленные элементы преобразуются к половинному размеру отбрасыванием старших разрядов. Поддержка следующих преобразований необязательна: одинарная точность в половинную, четырёхкратная точность в двойную, 8--разрядное целое в 4--разрядное.
+
+Если длина входного вектора отличается от длины, указанной в RS, то перед сжатием длина преобразуется к длине в RS.
+
+\subsubsection{compress\_ss}
+То же, что и compress. Целые числа трактуются как знаковые, и сжимаются с насыщением. Вещественные операнды использоваться не могут. Данная команда необязательна.
+
+\subsubsection{compress\_us}
+То же, что и compress. Целые числа трактуются как беззнаковые, и сжимаются с насыщением. Вещественные операнды использоваться не могут. Данная команда необязательна.
+
+\subsubsection{expand}
+Это операция, обратная к compress. Результирующий вектор имеет указанную длину, а входной вектор --- половинную длину. Поле OT указывает тип операнда выходного вектора. Вещественные числа одинарной точности преобразуются в числа двойной точности. Целые числа преобразуются в числа двойного размера расширением знаком. Поддержка следующих преобразований необязательна: половинная точность в одинарную, двойная точность в четырёхкратную, 4--разрядное целое в 8--разрядное.
+
+Если длина входного вектора отличается от RS/2, то перед расширением она преобразуется. Если получившаяся длина превышает максимальную длину вектора для указанного типа операнда, то лишние элементы теряются.
+
+\subsubsection{expand\_us}
+То же, что expand. Целые числа расширяются знаком. Вещественные операнды использоваться не могут.
+
+\subsection{Одноформатные команды, которые могут перемещать данные горизонтально из одного вектора в другой}
+Для очень длинных векторов задержка этих команд может зависеть от расстояния перемещения (указанного в RS).
+
+\subsubsection{extract}
+Выделить один элемент вектора в скаляр, находящийся в векторном регистре. Находящийся вне диапазона индекс порождает нулевой результат. Может использоваться размер операнда, равный 16 байтам, даже если этот размер никак иначе не поддерживается.
+
+\subsubsection{insert}
+Заменить один элемент вектора, вставив скаляр в позицию, указанную индексом. Находящийся вне диапазона индекс оставит вектор без изменения. Может использоваться размер операнда, равный 16 байтам, даже если этот размер никак иначе не поддерживается.
+
+\subsubsection{shift\_up}
+Сдвинуть элементы вектора влево на количество элементов, указанное в RS. Младшие RS элементов приёмника становятся нулями, а старшие RS элементов источника --- теряются.
+
+Данная команда отличается от shift\_expand тем, что величина сдвига указывается как количество элементов, а не количество байтов, и тем, что длина вектора не изменяется.
+
+\subsubsection{shift\_dn}
+Сдвинуть элементы вектора вправо на количество элементов, указанное в RS. Старшие RS элементов приёмника становятся нулями, а младшие RS элементов источника --- теряются.
+
+Данная команда отличается от shift\_reduce  тем, что величина сдвига указывается как количество элементов, а не количество байтов, и тем, что длина вектора не изменяется.
+
+\subsubsection{permute}
+Эта команда переставляет элементы вектора. Вектор делится на блоки, размером по RS байтов каждый. Размер блока должен быть степенью двойки и кратен размеру операнда. Элементы могут произвольно меняться местами в каждом блоке, но не между блоками. Каждый элемент результирующего вектора является копией элемента входного вектора, выбранного соответствующим индексом в индексном векторе. Индексы отсчитываются от начала того блока, которому принадлежат, так что индекс, равный нулю, выберет первый элемент блока входного вектора, и вставит его в соответствующую позицию результирующего вектора. Один и тот же элемент входного вектора может быть скопирован во много элементов результирующего вектора. Индекс, находящийся вне диапазона, в качестве результата даст нуль. Индексы интерпретируются как целые числа, независимо от типа операнда.
+
+У команды permute есть две версии. Первая версия указывает индексы в векторе той же длины и того же размера элемента, что и входной вектор.
+
+Вторая версия указывает индексы как 32--разрядную непосредственно заданную константу, с 4 разрядами на элемент. Эта константа  разбивается на самое большее 8 элементов, по 4 разряда в каждом. Если блоки имеют более 8 элементов, то, для заполнения блока, последовательность из 8 элементов повторяется. В этой версии команды permute один и тот же шаблон индексов будет применён ко всем блокам.
+
+Максимальный размер блока для команды permute зависит от реализации и задаётся специальным регистром. Причина этого ограничения на размер блока состоит в том, что сложность аппаратуры растёт квадратично с ростом размера блока. Полная перестановка возможна, если длина вектора не превышает максимального размера блока. Если RS больше максимального размера блока, то порождается ловушка.
+
+Есть два способа комбинирования результатов многократных команд перестановки. Один метод заключается в использовании находящихся вне диапазона индексов, чтобы порождать нули для неиспользуемых элементов, а затем применять операцию поразрядного ИЛИ результатов. Другой метод состоит в использовании масок для комбинирования результатов.
+
+Команды перестановки полезны для переупорядочивания данных, транспонирования матриц, и т.п.
+
+Когда размер блока достаточно велик, чтобы содержать всю таблицу, команды перестановки могут также использоваться для параллельного просмотра таблицы.
+
+Наконец, команды перестановки могут использоваться для сбора и рассеивания данных в пределах области, не большей длины вектора или размера блока.
+
+\subsubsection{broadcast}
+Копирует первый элемент входного вектора во все элементы выходного вектора. Если максимальная длина вектора более 16 байт, то поддерживается размер элемента, равный 16 байтам (128 разрядов), даже если этот размер никак иначе не поддерживается.
+
+\subsection{Иные одноформатные векторные команды}
+\subsubsection{Арифметика с насыщением} \label{saturatedArithmeticInstructions}
+Сюда относятся команды add\_ss, add\_us, sub\_ss, sub\_us, mul\_ss, mul\_us, shl\_ss, shl\_us.
+
+Эти команды используются для арифметических операций с насыщением. Выход за верхнюю границу даст максимальное значение для заданного размера операнда. Выход за нижнюю --- минимальное значение
+
+Поддержка данных команд необязательна.
+
+\subsubsection{Сложение с переносом и вычитание с заёмом} \label{addWithCarryInstruction}
+Это команды add\_c, sub\_b. В них dest и src1 являются векторами из двух целых чисел, а src2 --- вектор из целых чисел, в котором используется только первый элемент.
+
+add\_c: 
+\begin{verbatim}
+   sum = src1[0] + src2[0] + (src1[1] & 1)
+   dest[0] = bit 0-63 of sum 
+   dest[1] = bit 64 of sum
+\end{verbatim}
+
+sub\_b:
+\begin{verbatim}
+   sum = src1[0] - src2[0] - (src1[1] & 1)
+   dest[0] = bit 0-63 of sum 
+   dest[1] = bit 64 of sum
+\end{verbatim}
+
+Поддержка этих команд необязательна. Более длинные векторы --- не поддерживаются. См. с.~\pageref{highPrecisionArithmetic} по поводу иных вариантов для более длинных векторов.
+
+\subsubsection{Арифметические команды с проверкой переполнения} \label{instructionsWithOverflowCheck}
+Это команды add\_oc, sub\_oc, subr\_oc, mul\_oc, div\_oc.
+
+Данные команды для арифметических вычислений используют элементы векторов, имеющие чётные номера. Каждый следующий элемент вектора, имеющий нечётный номер, используется для обнаружения переполнения. Если первый операнд--источник является скаляром, то результирующий операнд будет вектором из двух элементов.
+
+Условия переполнения указываются следующими разрядами:
+
+разряд №0. беззнаковое целочисленное переполнение(перенос)
+
+разряд №1. знаковое целочисленное переполнение
+
+разряд №2. вещественное переполнение
+
+разряд №3. недопустимая вещественная операция
+
+Значения распространяются так, чтобы к результат переполнения операции и обоим входным операндам применяется поразрядное ИЛИ.
+
+Данные команды необязательны.
+
+\subsubsection{Расширенное деление} \label{extendedDivisionInstruction}
+Это команды div\_ex\_s, div\_ex\_u.
+
+Они необязательны, и могут поддерживаться и для скаляров, и для векторов; только для скаляров; или не поддерживаться вовсе.
+
+\subsubsection{byte\_reverse}
+Данная команда обращает порядок байтов в целом числе. Она может использоваться при чтении и записи двоичных файлов данных с обратным порядком байтов.
+
+\subsubsection{read\_spev}
+Значение поля RT указывает специальный регистр, который нужно прочитать. Приёмник является векторным регистром, длина которого указана в RS.
+
+На данный момент определены следующие специальные регистры:
+
+\begin{longtable} {|p{20mm}|p{130mm}|}
+\caption{Специальные регистры, которые можно прочесть в векторы} 
+\label{table:specialVectorRegisters} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Номер специального регистра & \bfseries Смысл  \\ \hline
+0                                     & Численный управляющий регистр (NUMCONTR). Это значение рассылается во все элементы регистра--приёмника с указанными размером операнда и длиной.  \\ \hline
+1                                     & Имя процессора. Результат является заканчивающейся нулём строкой в кодировке UTF-8, содержащей торговую марку и имя модели микропроцессора. \\ \hline
+\end{longtable}
+
+\subsubsection{replace}
+Все элементы из src1 заменяются целочисленной или вещественной константой из src2.
+
+При использовании без маски константа просто рассылается, чтобы сделать вектор того же размера, что и src1. При использовании с маской элементы из src1 заменяются выборочно. В зависимости от разряда №1 маски, невыбранные элементы обнуляются или остаются без изменений.
+
+\subsubsection{make\_mask}
 %Make a mask from the bits of the 32-bit integer constant src2. Each bit of src2 goes into bit 0 of one element of the output. The remaining bits of each element are taken from src1. The length of the output is the same as the length of src1. If there are more than 32 elements in the vector then the bit pattern of src2 is repeated.
 %
 %
@@ -824,7 +707,5 @@
 %All other opcodes not explicitly defined are type 1. These may be used for future instructions.
 %\vspace{2mm}
 %
-%Small systems with no operating system and no trap support should define alternative behavior.
-%
-% 
+%Small systems with no operating system and no trap support should define alternative behavior. 
 \end{document}
