@@ -495,185 +495,159 @@ sub\_b:
 При использовании без маски константа просто рассылается, чтобы сделать вектор того же размера, что и src1. При использовании с маской элементы из src1 заменяются выборочно. В зависимости от разряда №1 маски, невыбранные элементы обнуляются или остаются без изменений.
 
 \subsubsection{make\_mask}
-%Make a mask from the bits of the 32-bit integer constant src2. Each bit of src2 goes into bit 0 of one element of the output. The remaining bits of each element are taken from src1. The length of the output is the same as the length of src1. If there are more than 32 elements in the vector then the bit pattern of src2 is repeated.
-%
-%
-%\subsubsection{fp\_category}
-%The input is a floating point vector. The output is a boolean vector indicating if the input belongs to any of the categories indicated by the bits in the immediate operand:
-%
-%\begin{longtable} {|p{20mm}|p{90mm}|}
-%\caption{Meaning of bits in fp\_category} 
-%\label{table:fpCategoryInstructionBits} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Bit number & \bfseries Meaning  \\
-%\hline
-%0 & Invert result \\
-%1 & Zero \\
-%2 & Subnormal  \\
-%3 & Normal \\
-%4 & Infinite  \\
-%5 & NAN \\
-%6 & Sign bit  \\
-%7 & Copy remaining bits from mask or numeric control register.  \\
-%\hline
-%\end{longtable}
-%  
-%
-%\subsubsection{Truth table functions} \label{truthTableFunctions}
-%truth\_tab2, truth\_tab3, truth\_tab4
-%\vspace{2mm}
-%
-%These instructions can make an arbitrary boolean function of two, three or four boolean vector input variables, expressed by a truth table. The result in bit 0 of each vector element is the arbitrary boolean function of bit 0 of the corresponding elements of each of the input operands. Bit 0 of the output is a bit from the truth table selected by the combined input bits. The remaining bits of the output vector are copied from the mask register if there is one, or from the first input operand otherwise. 
-%\vspace{2mm}
-%
-%truth\_tab2 has the inputs in RD and RS, the output in RD, and a 4-bit truth table in IM1.
-%\vspace{2mm}
-%
-%truth\_tab3 has the inputs in RS, RT and RU, the output in RD, and an 8-bit truth table in IM2.
-%\vspace{2mm}
-%
-%truth\_tab4 has the inputs in RD, RS, RT and RU, the output in RD, and a 16-bit truth table in IM2.
-%\vspace{2mm}
-%
-%truth\_tab4 must have an operand size of at least 16 bits. truth\_tab3 and truth\_tab4 are optional.
-%\vspace{2mm}
-%
-%A mask can be used as an extra input operand for truth\_tab3 and truth\_tab4, according to the normal function of a mask.
-%\vspace{2mm}
-%
-%These instructions can be used as universal instructions for manipulating and combining boolean vectors and masks.
-%\vspace{2mm}
-%
-%The hardware implementation can use the existing barrel shifters, shifting the truth table right by the count defined by the combined bits of the input operands.
-%
-%
-%\subsubsection{add\_add\_add} \label{addAddAdd}
-%Adds four operands. The last operand can be a register operand or a 16-bit signed immediate operand. The signs of the operands can be inverted as indicated by bits 0-3 of the OP3 field:
-%\vspace{2mm}
-%
-%bit 0: change sign of src1
-%
-%bit 1: change sign of src2
-%
-%bit 2: change sign of src3
-%
-%bit 3: change sign of src4
-%\vspace{2mm}
-%
-%See add\_add page \pageref{addAdd} for more details.
-%\vspace{2mm}
-%
-%This instruction is optional.
-%
-%
-%\section{Common operations that have no dedicated instruction}
-%This section discusses some common operations that are not implemented as single instructions, and how to code these operations in software.
-%
-%\subsubsection{Change sign}
-%For integer operands, do a reverse subtract from zero. For floating point operands, use the toggle\_b instruction on the sign bit.
-%
-%\subsubsection{Floating point abs}
-%To get the absolute value of a floating point number, use the clear\_b instruction to clear the sign bit.
-%
-%\subsubsection{Not}
-%To invert all bits in an integer, do an XOR with -1. To invert a Boolean, do an XOR with 1.
-%
-%\subsubsection{Rotate through carry}
-%Rotates through carry are rarely used, and common implementations can be very inefficient. A rotate left through carry can be replaced by an add\_c with the same register in both source operands.
-%
-%\subsubsection{Horizontal vector add} \label{horizontalVectorAdd}
-%An instruction for adding all elements of a vector would be useful, but such an instruction is not supported because this would be a complex instruction with variable latency depending on the vector length.
-%\vspace{2mm}
-%
-%The sum of all elements of a vector can be calculated by repeatedly adding the lower half and the upper half of the vector. This method is illustrated by the following example, finding the horizontal sum of a vector of 32-bit integers. The syntax for assembly language is described on page \pageref{assemblySyntax}.
-%
-%\begin{lstlisting}[frame=none]
-%   v0 = my_vector   // we want the horizontal sum of this vector
-%   r0 = get_len(v0) // length of vector in bytes
-%   r0 = roundu2.64(r0)  // round up to nearest power of 2
-%   v0 = set_len(v0, r0) // adjust vector length
-%   // Loop to calculate horizontal sum of v0
-%   LOOP: // label
-%      // Half vector length
-%      r1 = shift_rightu.64(r0, 1)
-%      // Get upper half of vector
-%      v1 = shift_reduce(v0, r1)
-%      // Add upper half and lower half
-%      v0 = add.32(v1, v0)  // result has the length of the first operand
-%      // Half length for next iteration
-%      r0 = r1
-%      // loop while vector contains more than one element
-%      compare_unsign_jmpabove(r1, 4, LOOP)      
-%   // The sum is now a scalar in v0
-%\end{lstlisting}
-%
-%The same method can be used for other horizontal operations. It may cause problems that the set\_len instruction inserts elements of zero if the vector length is not a power of 2. Special care is needed if the operation does not allow extra elements of zero, for example if the operation involves multiplication or finding the minimum element. A possible solution is to mask off the unused elements in the first iteration. The following example finds the smallest element in a vector of floating point numbers:
-%
-%\begin{lstlisting}[frame=none]
-%   v0 = my_vector              // find the smallest element in this vector
-%   r0 = get_len(v0)            // length of vector in bytes
-%   r1 = roundu2.64(r0)         // round up to nearest power of 2
-%   r1 = shift_rightu.64(r1, 1) // half length
-%   v1 = shift_reduce(v0, r1)   // upper part of vector
-%   r2 = sub.64(r0, r1)         // length of v1
-%   // use mask because the two operands may have different length
-%   v0 = set_len(v0, r1)        // reduce length of v0
-%   v2 = v0                     // arbitrary vector with length r1
-%   v2 = mask_length.32(v2, r2, 0x22)  // make mask for v1
-%   v0 = min.f(v0, v1, mask=v2) // get minimum. mask off unused elements
-%   cmp_unsign_jmpbeloweq(r1, 4, ENDOFLOOP) // check if already finished
-%   // Loop to calculate horizontal minimum of v0
-%   LOOP: // label
-%      // Half vector length
-%      r2 = shift_rightu.64(r1, 1)
-%      // Get upper half of vector
-%      v1 = shift_reduce(v0, r2)
-%      // Get minimum of upper half and lower half
-%      v0 = min.f(v1, v0)  // result has the length of the first operand
-%      // Half length for next iteration
-%      r1 = r2
-%      // loop while vector contains more than one element
-%      compare_unsign_jmpabove(r2, 4, LOOP)
-%   ENDOFLOOP:      
-%   // The minimum is now a scalar in v0
-%\end{lstlisting}
-%
-%
-%\subsubsection{High precision arithmetic} \label{highPrecisionArithmetic}
-%Function libraries for high precision arithmetic typically use a long sequence of add-with-carry instructions for adding integers with a very large number of bits. A more efficient method for big number calculation is to use vector addition and a carry-look-ahead method. The following algorithm calculates A + B, where A and B are big integers represented as two vectors of n$\cdot$64 bits each, where n \textless{} 64.
-%\vspace{2mm}
-%
-%\begin{lstlisting}[frame=none]
-%v0 = A                   // first vector, n*64 bits
-%v1 = B                   // second vector, n*64 bits
-%v2 = carry_in            // scalar in vector register
-%v0 = add.64(v0, v1)      // sum without intermediate carries
-%v3 = compare.64(v0,v1,8) // carry generate = (SUM < B). (unsigned compare)
-%v4 = compare.64(v0,-1,0xA) // carry propagate = (SUM == -1) 
-%v3 = bool2bits(v3)       // carry generate, compressed to bitfield
-%v4 = bool2bits(v4)       // carry propagate, compressed to bitfield
-%// CA = CP ^ (CP + (CG<<1) + CIN) // propagated additional carry
-%v3 = shift_left.64(v3,1) // shift left carry generate
-%v2 = add.64(v2,v4)
-%v2 = add.64(v2,v3)
-%v2 = xor.64(v2,v4)
-%v1 = bits2bool(v2)       // expand additional carry to vector
-%v0 = sum.64(v0,v1)       // add correction to sum
-%r0 = get_num(v0)         // n = number of elements in vectors
-%v3 = gp2vec.64(r0)       // copy to vector register
-%v2 = shift_rightu.64(v2,v3) // carry out
-%// v0 = sum, v2 = carry out
-%\end{lstlisting}
-%\vspace{2mm}
-%
-%If the numbers A and B are longer than the maximum vector length then the algorithm is repeated. If the vector length is more than 64 * 8 bytes then the calculation of the additional carry involves more than 64 bits, which again requires a big number algorithm.
-%
-%
-%\section{Unused instructions} \label{unusedInstructions}
-%Unused instructions and opcodes can be divided into three types:
-%
+Сделать маску из разрядов 32--разрядной целочисленной константы src2. Каждый разряд из src2 идёт в разряд №0 одного элемента результата. Оставшиеся разряды каждого элемента берутся из src1. Длина результата --- та же, что и у src1. Если в векторе более 32 элементов, то двоичный шаблон из src2 повторяется..
+
+\subsubsection{fp\_category}
+Входной аргумент --- вещественный вектор. Выходной --- булев вектор, указывающий, принадлежит ли входной аргумент какой--либо из указанных разрядами непосредственно заданного операнда категорий:
+
+\begin{longtable} {|l|p{90mm}|}
+\caption{Смысл разрядов в fp\_category} 
+\label{table:fpCategoryInstructionBits} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Номер разряда & \bfseries Смысл  \\ \hline
+0 & Инвертировать результат. \\
+1 & Ноль. \\
+2 & Денормализованное.  \\
+3 & Нормализованное. \\
+4 & Бесконечность.  \\
+5 & Нечисло (NAN). \\
+6 & Знаковый разряд.  \\
+7 & Копировать оставшиеся разряды из маски или численного управляющего регистра.  \\ \hline
+\end{longtable}
+
+\subsubsection{Команды для таблиц истинности} \label{truthTableFunctions}
+Это команды truth\_tab2, truth\_tab3, truth\_tab4.
+
+Эти команды могут вычислять заданные таблицами истинности произвольные булевы функции двух, трёх, или четырёх входных векторных булевых аргументов. Результат в разряде №0 каждого элемента вектора является произвольной булевой функцией разряда №0 соответствующих элементов каждого из входных операндов. Разряд №0 результата равен разряду из таблицы истинности, выбранному скомбинированными разрядами аргументов. Остальные разряды вектора--результата копируются из регистра маски, если таковой есть, или, в противном случае, из первого входного операнда. 
+
+У truth\_tab2 аргументы --- в RD и RS, результат --- в RD, а 4--разрядная таблица истинности --- в IM1.
+
+У truth\_tab3 аргументы --- в RS, RT и RU, результат --- в RD, а 8--разрядная таблица истинности --- в IM2.
+
+У truth\_tab4 аргументы --- в RD, RS, RT и RU, результат --- в RD, а 16--разрядная таблица истинности --- в IM2.
+
+У truth\_tab4 размер операнда должен быть не менее 16 разрядов. Команды truth\_tab3 и truth\_tab4 --- необязательны.
+
+Команды truth\_tab3 и truth\_tab4 в качестве дополнительного операнда могут использовать маску, в соответствии с обычной функцией последней.
+
+Эти команды могут использоваться в качестве универсальных команд для манипулирования и комбинирования булевых векторов и масок.
+
+Аппаратная реализация может использовать существующие модули сдвига, сдвигая таблицу истинности на количество разрядов, указанное скомбинированными разрядами входных операндов.
+
+\subsubsection{add\_add\_add} \label{addAddAdd}
+Складывает четыре аргумента. Последний операнд может быть регистровым операндом или 16--разрядным знаковым непосредственно заданным операндом. Знаки операндов могут инвертироваться, что указывается разрядами 0--3 поля OP3:
+
+разряд №0: изменить знак src1
+
+разряд №1: изменить знак src2
+
+разряд №2: изменить знак src3
+
+разряд №3: изменить знак src4
+
+По поводу деталей см. с.~\pageref{addAdd}.
+
+Данная команда --- необязательна.
+
+\section{Распространённые операции, для которых нет специальных команд}
+В данном разделе обсуждаются некоторые распространённые операции, которые не реализованы как отдельные команды, и то, как закодировать эти операции программно.
+
+\subsubsection{Смена знака}
+Для целочисленных операндов осуществляйте её обратным вычитанием из нуля. Для вещественных операндов используйте команду toggle\_b над знаковым разрядом.
+
+\subsubsection{Команда abs для вещественных чисел}
+Для получения абсолютной величины вещественного числа используйте clear\_b для очистки знакового разряда.
+
+\subsubsection{Not}
+Чтобы инвертировать все разряды целого числа, выполните ИСКЛЮЧАЮЩЕЕ ИЛИ с -1. Для инвертирования булева значения выполните ИСКЛЮЧАЮЩЕЕ ИЛИ с 1.
+
+\subsubsection{Вращение через перенос}
+Вращение через перенос используется редко, а распространённые реализации могут быть очень неэффективны. Вращение влево через перенос можно заменить командой  add\_c с одним и тем же регистром в обоих операндах--источниках.
+
+\subsubsection{Горизонтальное векторное сложение} \label{horizontalVectorAdd}
+Команда сложения всех элементов вектора была бы полезна, но такая команда не поддерживается, ибо такая она была бы сложной командой с переменной задержкой, зависящей от длины вектора.
+
+Сумму всех элементов вектора можно вычислить, повторно складывая младшую и старшую половины вектора. Данный метод иллюстрируется следующим примером, находящим горизонтальную сумму вектора, состоящего из 32--разрядных целых чисел. Синтаксис языка ассемблера описан на с.~\pageref{assemblySyntax}.
+\begin{verbatim}
+   v0 = my_vector   // мы хотим вычислить горизонтальную сумму этого вектора
+   r0 = get_len(v0) // длина вектора (в байтах)
+   r0 = roundu2.64(r0)  // округлить к ближайшей большей степени двойки
+   v0 = set_len(v0, r0) // настроить длину вектора
+   // Цикл вычисления горизонтальной суммы для v0
+   LOOP: // метка
+      // Вектор половинной длины.
+      r1 = shift_rightu.64(r0, 1)
+      // Получить старшую половину вектора.
+      v1 = shift_reduce(v0, r1)
+      // Сложить старшую и младшую половины
+      v0 = add.32(v1, v0)  // результат имеет ту же длину, что и первый операнд
+      // Половинная длина для следующей операции.
+      r0 = r1
+      // повторять, пока вектор содержит более одного элемента
+      compare_unsign_jmpabove(r1, 4, LOOP)      
+   // Теперь сумма является скаляром, находящимся в v0.
+\end{verbatim}
+
+Тот же самый метод может использоваться и для других горизонтальных операций. Может вызвать проблемы то, что команда set\_len вставляет равные нулю элементы, если длина вектора не равна степени двойки. Особенно беспокоиться нужно, если операция не допускает равных нулю дополнительных элементов, например, если операция использует умножение или нахождение наименьшего элемента. Возможное решение состоит в маскировании неиспользуемых элементов на первой итерации. Следующий пример находит наименьший элемент в векторе из вещественных чисел:
+\begin{verbatim}
+   v0 = my_vector              // найти наименьший элемент в этом векторе
+   r0 = get_len(v0)            // длина вектора (в байтах)
+   r1 = roundu2.64(r0)         // округлить к ближайшей большей степени двойки
+   r1 = shift_rightu.64(r1, 1) // половина длины
+   v1 = shift_reduce(v0, r1)   // старшая часть вектора
+   r2 = sub.64(r0, r1)         // длина вектора v1
+   // использовать маску, поскольку два операнда могут иметь различные длины
+   v0 = set_len(v0, r1)        // уменьшить длину вектора v0
+   v2 = v0                     // произвольный вектор с длиной r1
+   v2 = mask_length.32(v2, r2, 0x22)  // создать маску для v1
+   v0 = min.f(v0, v1, mask=v2) // получить минимум, замаскировав неиспользуемые элементы
+   cmp_unsign_jmpbeloweq(r1, 4, ENDOFLOOP) // проверить, не закончилось ли уже
+   // Цикл для вычисления горизонтального минимума из элементов v0.
+   LOOP: // метка
+      // Вектор половинной длины.
+      r2 = shift_rightu.64(r1, 1)
+      // Получить старшую половину вектора.
+      v1 = shift_reduce(v0, r2)
+      // Вычислить минимум из старшей и младшей половины.
+      v0 = min.f(v1, v0)  // результат имеет ту же длину, что и первый операнд
+      // Половинная длина для следующей операции.
+      r1 = r2
+      // повторять, пока вектор содержит более одного элемента
+      compare_unsign_jmpabove(r2, 4, LOOP)
+   ENDOFLOOP:      
+   // Теперь минимум является скаляром, находящимся в v0.
+\end{verbatim}
+
+\subsubsection{Арифметика высокой точности} \label{highPrecisionArithmetic}
+Библиотеки функций для арифметики высокой точности для сложения чисел с очень большим количеством разрядов обычно используют длинную последовательность команд сложения с переносом. Более эффективным методом для вычислений с большими числами является использование векторного сложения и метода ускоренного переноса. Следующий алгоритм вычисляет A + B, где A и B --- большие целые числа, представленные в виде двух векторов, по n$\cdot$64 разрядов в каждом, где n \textless{} 64.
+\begin{verbatim}
+v0 = A                   // первый вектор, n*64 bits
+v1 = B                   // второй вектор, n*64 bits
+v2 = carry_in            // скаляр в векторном регистре
+v0 = add.64(v0, v1)      // сумма без промежуточных переносов
+v3 = compare.64(v0,v1,8) // породить перенос = (SUM < B) (сравнение --- беззнаковое)
+v4 = compare.64(v0,-1,0xA) // распространить перенос = (SUM == -1) 
+v3 = bool2bits(v3)       // породить перенос, сжатый до битового поля
+v4 = bool2bits(v4)       // породить перенос, сжатый до битового поля
+// CA = CP ^ (CP + (CG<<1) + CIN) // распространить дополнительный перенос
+v3 = shift_left.64(v3,1) // сдвинуть влево порождённые переносы
+v2 = add.64(v2,v4)
+v2 = add.64(v2,v3)
+v2 = xor.64(v2,v4)
+v1 = bits2bool(v2)       // расширить дополнительный перенос на вектор
+v0 = sum.64(v0,v1)       // прибавить поправку к сумме
+r0 = get_num(v0)         // n = количество элементов в векторах
+v3 = gp2vec.64(r0)       // копировать в векторный регистр
+v2 = shift_rightu.64(v2,v3) // итоговый перенос
+// v0 = сумма, v2 = итоговый перенос
+\end{verbatim}
+
+Если числа A и B длиннее, чем максимальная длина вектора, то алгоритм повторяется. Если длина вектора --- больше, чем 64 $\cdot$ 8 байт, то вычисление дополнительного переноса вовлечёт более 64 разрядов, что снова потребует алгоритма работы с большими числами.
+
+\section{Неиспользуемые команды} \label{unusedInstructions}
+Неиспользуемые команды и опкоды (коды операций) можно разбить на три типа:
 %\begin{enumerate}
 %\item The opcode is reserved for future use. Attempts to execute it will trigger a trap (synchronous interrupt) which can be used for generating an error message or for emulating instructions that are not supported.
 %\item The opcode is guaranteed to generate a trap, not only in the present version, but also in all future versions. This can be used as a filler in unused parts of the memory or for indicating unrecoverable errors. It can also be used for emulating user-specific instructions.
