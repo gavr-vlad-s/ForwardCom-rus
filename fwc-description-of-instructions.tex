@@ -648,38 +648,30 @@ v2 = shift_rightu.64(v2,v3) // итоговый перенос
 
 \section{Неиспользуемые команды} \label{unusedInstructions}
 Неиспользуемые команды и опкоды (коды операций) можно разбить на три типа:
-%\begin{enumerate}
-%\item The opcode is reserved for future use. Attempts to execute it will trigger a trap (synchronous interrupt) which can be used for generating an error message or for emulating instructions that are not supported.
-%\item The opcode is guaranteed to generate a trap, not only in the present version, but also in all future versions. This can be used as a filler in unused parts of the memory or for indicating unrecoverable errors. It can also be used for emulating user-specific instructions.
-%\item The error is ignored and does not trigger a trap. It can be used for future extensions that improve performance or functionality, but which can be safely ignored when not supported.
-%\end{enumerate}
-%
-%All three types are implemented, where type 1 is the most common.
-%\vspace{2mm}
-%
-%Nop instructions with nonzero values in unused fields are type 3. These instructions are ignored.
-%\vspace{2mm}
-%
-%Prefetch and fence instructions with no memory operand, with nonzero values in unused fields, or with undefined values in OP3 are type 3. These instructions are ignored.
-%\vspace{2mm}
-%
-%Unused bits in masks and numeric control register are type 3. These bits are ignored.
-%\vspace{2mm}
-%
-%Trap instructions and conditional trap instructions with nonzero values in unused fields or undefined values in any field are type 2. These instructions are guaranteed to generate a trap. A special version of the trap instruction is intended as filler in unused or inaccessible parts of code memory.
-%\vspace{2mm}
-%
-%The undef instruction is type 2. It is guaranteed to generate a trap in all systems. It can be used for testing purposes and emulation.
-%\vspace{2mm}
-%
-%The userdef\_\_ instructions are type 1. These instructions are reserved for user-defined and application-specific purposes.
-%\vspace{2mm}
-%
-%Instructions with erroneous coding should preferably behave as type 1. This includes instruction codes with nonzero values in unused fields, operand types not supported, or any other bit pattern with no defined meaning in any field. Type 3 behavior may alternatively be allowed in these cases. If so, the instruction should behave as if it were coded correctly.
-%\vspace{2mm}
-%
-%All other opcodes not explicitly defined are type 1. These may be used for future instructions.
-%\vspace{2mm}
-%
-%Small systems with no operating system and no trap support should define alternative behavior. 
+\begin{enumerate}
+	\item Опкод зарезервирован для последующего использования. Попытка его выполнения вызовет ловушку (синхронное прерывание), которая может использоваться для порождения сообщения об ошибке или для эмуляции неподдерживаемой команды.
+	\item Опкод гарантированно генерирует ловушку, не только в текущей версии, но и всех последующих. Он может использоваться как заполнитель неиспользуемых частей памяти или как указание на ошибку, после которой невозможно восстановиться. Его можно также использовать для эмуляции специфичных для пользователя команд.
+	\item Ошибка игнорируется, и ловушки не возникает. Это может использоваться для последующих расширений, улучшающих производительность или функциональность, но которые можно безопасно игнорировать, когда они не поддерживаются.
+\end{enumerate}
+
+Реализованы все три типа, и тип 1 --- наиболее распространён.
+
+Команды nop с ненулевыми значениями в неиспользуемых полях принадлежат типу 3. Эти команды игнорируются.
+
+Команды prefetch и fence без находящегося в памяти операнда, с ненулевыми значениями в неиспользуемых полях, или с неопределёнными значениями в OP3 принадлежат типу 3. Эти команды игнорируются.
+
+Неиспользуемые разряды в масках и численном управляющем регистре имеют тип 3. Эти разряды игнорируются.
+
+Команды trap (в том числе условные) с ненулевыми значениями в неиспользуемых полях или неиспользуемыми значениями в любом поле имеют тип 2. Эти команды гарантированно порождают ловушку. Специальная версия команды trap предназначена для использования в качестве заполнителя неиспользуемых или недоступных частей памяти кода.
+
+Команда undef имеет тип 2. Она гарантированно порождает ловушку на всех системах, и может использоваться для целей тестирования и эмуляции.
+
+
+Команды userdef\_\_ имеют тип 1. Эти команды зарезервированы для определения пользователем и для целей конкретных приложений.
+
+Для команд с ошибочной кодировкой следует предпочесть их поведение, как в типе 1. Сюда включаются коды команд с ненулевыми значениями в неиспользуемых полях, неподдерживаемыми типами операндов, или любыми другими двоичными шаблонами с неопределённым смыслом в каком--либо поле. Как вариант, в этих случаях может допускаться поведение типа 3. Если это так, то команде следует вести себя так, как будто она закодирована корректно.
+
+Все прочие опкоды неявно определены как имеющие тип 1, и могут использоваться для последующих расширений.
+
+Малым системам, без операционных систем и без поддержки ловушек, следует определить иное поведение. 
 \end{document}
