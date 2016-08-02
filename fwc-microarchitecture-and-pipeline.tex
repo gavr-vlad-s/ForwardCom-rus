@@ -1,76 +1,60 @@
 % chapter included in forwardcom.tex
 \documentclass[forwardcom.tex]{subfiles}
 \begin{document}
-\RaggedRight
+\chapter{Микроархитектура и дизайн конвейера}
+Набор команд ForwardCom предназначен для облегчения стабильного и эффективного дизайна конвейера суперскалярного микропроцессора. Команды могут иметь один операнд--приёмник, вплоть до трёх или четырёх операндов--источников, регистр маски, и регистр, указывающий длину вектора. Последний операнд--источник может быть регистром, находящимся в памяти операндом, или непосредственно заданной константой. Все другие операнды --- регистры, за исключением команд записи в память. Суммарное количество входных регистров команды, включая операнды--источники, маску, базовый указатель, индекс, и указание длины вектора, не может быть более пяти.
 
-\chapter{Microarchitecture and pipeline design}
-The ForwardCom instruction set is intended to facilitate a consistent and efficient design of the pipeline of a superscalar microprocessor. Instructions can have one destination operand, up to three or four source operands, a mask register, and a register specifying vector length. The last source operand can be a register, a memory operand or an immediate constant. All other operands are registers, except for memory write instructions. The total number of input registers to an instruction, including source operands, mask, base pointer, index and vector length specifier cannot be more than five.
-\vspace{2mm}
+Никакая команда не может иметь более одного находящегося в памяти операнда. Никакая команда не может иметь и операнд--источник, находящийся в памяти, и непосредственно заданный операнд, хотя это может быть разрешено в последующих расширениях. Любые дополнительные поля непосредственно заданных операндов могут использоваться для разрядов опций. 
 
-No instruction can have more than one memory operand. No instruction can have both a memory source operand and an immediate operand, though this may be allowed in future extensions. Any extra immediate operand field can be used for option bits. 
-\vspace{2mm}
-
-A high performance pipeline may be designed as superscalar with the following stages.
+Высокопроизводительный конвейер может быть спроектирован как суперскалярный, со следующими стадиями.
 \begin{itemize}
-\item  Fetch. Fetching blocks of code from the instruction cache, one cache line at a time, or as determined by the branch prediction machinery. 
+\item Выборка. Выборка блоков кода из кэша команд, по одной строке кэша за раз, либо так, как определено механизмом предсказания ветвлений. 
 
-\item  Instruction length decode. Determine the length of each instruction and identify tiny instructions. Distribute the first P instructions into each their pipeline lane, where P is the number of parallel lanes implemented in the pipeline. Excess instructions may be queued for the next clock cycle. 
+\item Декодирование длин команд. Определение длины каждой команды и определение малых команд. Распределение первых P команд в свою полосу конвейера, где P --- количество параллельных полос, реализованных в конвейере. Избыточные команды могут быть поставлены в очередь до следующего такта. 
 
-\item  Instruction decode. Identify and classify all operands, opcode and option bits. Determine input and output dependencies.
+\item Декодирование команды. Определение и классификация всех операндов, опкодов, и разрядов опций. Определение входных и выходных зависимостей.
 
-\item  Register allocation and renaming. 
+\item Размещение и переименование регистров.
 
-\item  Instruction queue. 
+\item Очередь команд. 
 
-\item  Put instructions into reservation station. Schedule for address calculator. 
+\item Помещение команд в станцию восстановления. Планирование для вычислителя адресов. 
 
-\item  Calculate address and length of memory operand. Check access rights.
+\item Вычисление адреса и длины находящегося в памяти операнда. Проверка прав доступа.
 
-\item  Read memory operand. Schedule for execution units.  
+\item Чтение операнда из памяти. Планирование для исполнительных модулей.  
 
-\item  Execution units.  
+\item Исполнительные модули.  
 
-\item  Retire or branch. 
+\item Восстановление или ветвление. 
 \end{itemize}
 
-It is not necessary to split instructions into micro-operations if the reading of memory operands is done in a separate pipeline stage and instructions are allowed to stay in the reservation station until the memory operand has been read. 
-\vspace{2mm}
+Ненужно разбивать команды на микрооперации, если чтение находящихся в памяти операндов выполняется на отдельной стадии конвейера, и командам разрешается оставаться в станции восстановления до тех пор, пока не будет прочитан находящийся в памяти операнд.
 
-Each stage in the pipeline should ideally require only one clock cycle. Instructions waiting for an operand should stay in the reservation station. Most instructions will use only one clock cycle in the execution unit. Multiplication and floating point addition need a pipelined execution unit with several stages. Division and square root may use a separate state machine. 
-\vspace{2mm}
+Каждой стадии конвейера в идеале следует требовать лишь одного такта. Командам, ожидающим операндов, следует оставаться в станции восстановления. Большинство команд в исполнительном модуле будет использовать лишь один такт. Умножению и вещественному сложению нужен конвейеризованный исполнительный модуль с несколькими стадиями. Деление и квадратный корень могут использовать отдельный конечный автомат.
 
-Jump, branch, call and return instructions also fit into this pipeline design. 
-\vspace{2mm}
+Команды перехода, ветвления, вызова, и возврата также подпадают под этот дизайн конвейера.
 
-The reservation station has to consider all the input and output dependencies of each instruction. Each instruction can have up to five input dependencies and one output dependency. 
-\vspace{2mm}
+Станция восстановления должна рассматривать все входные и выходные зависимости каждой команды. Каждая команда может иметь вплоть до пяти входных зависимостей и одну выходную. 
 
-There can be multiple execution units so that it is possible to run multiple instructions in the same clock cycle if their operands are independent. 
-\vspace{2mm}
+Может быть много исполнительных модулей, так что возможен запуск нескольких команд в одном и том же такте, если их операнды независимы.
 
-An efficient out-of-order processing requires renaming of the general purpose registers and vector registers, but not necessarily the special registers. 
-\vspace{2mm}
+Эффективная неупорядоченная обработка требует переименования регистров общего назначения и векторных регистров, но ненужна для специальных регистров. 
 
-Complex instructions and microcode should generally be avoided. We do not have an instruction for saving or restoring all registers during a task switch. Instead, the necessary instructions for saving and restoring registers are implemented as tiny instructions to reduce the size of an instruction sequence that saves all registers. 
-\vspace{2mm}
+Сложных команд и микрокода в большинстве случаев следует избегать. У нас нет команд сохранения и восстановления всех регистров при переключении задач. Вместо этого необходимые команды сохранения и восстановления регистров реализованы как малые команды, чтобы уменьшить размер последовательности команд, сохраняющей все регистры.
 
-The following instructions are moderately complex: call, return, div, rem, sqrt, cmp\_swap, save\_cp, restore\_cp. These instructions may be implemented as dedicated state machines. The same applies to traps, Interrupts and system calls. 
-\vspace{2mm}
+Следующие команды умеренно сложны: call, return, div, rem, sqrt, cmp\_swap, save\_cp, restore\_cp. Эти команды можно реализовать специальными конечными автоматами. То же применимо к ловушкам, прерываниям, и системным вызовам.
 
-Some current CPUs have a ``stack engine'' in order to predict the value of the stack pointer for a push, pop or call instruction when preceding stack operations are delayed due to operands that are not available yet. Such a system is not needed if we have a dual stack design (see page \pageref{dualStack}). Even with a single stack design, there is little need for a stack engine because push and pop operations will be rare in critical parts of the code if the function calling conventions in this document are followed (page \pageref{functionCallingConventions}). 
-\vspace{2mm}
+У некоторых современных ЦП есть \glqq стековый модуль\grqq, чтобы предсказывать значение указателя стека для команд push, pop, или call, когда предшествующие стековые операции запаздывают из--за операндов, которые ещё недоступны. Такая система ненужна, если у нас имеется двухстековый дизайн (см. с.~\pageref{dualStack}). Даже при одностековом дизайне, в стековом модуле нужды мало, так как операции  push и pop будут редки в критичной части кода, если придерживаться соглашений вызова, предлагаемых в настоящем документе (с.~\pageref{functionCallingConventions}). 
 
-Branch prediction is important for the performance. We may implement four different branch prediction algorithms: one for ordinary branches, one for loops, one for indirect jumps, and one for function returns. The long form of branch instructions have an option bit for indicating loop behavior. The short form of branch instructions does not have space for such a bit. The initial guess may be to assume loop behavior if the branch goes backwards and ordinary branch behavior if the branch goes forwards. This assumption may be corrected later, if necessary, by the branch prediction machinery. 
-\vspace{2mm}
+Предсказание ветвления важно для производительности. Мы можем реализовать четыре различных алгоритма предсказания ветвлений: один для обыкновенных ветвлений, один --- для циклов, один --- для косвенных переходов, и один --- для возвратов из функций. У длинной формы команд ветвления имеется разряд опции для указания поведения цикла. В короткой форме команд ветвления места для такого разряда нет. Первоначальная догадка может состоять в предположении циклического поведения, если ветвление выполняет переход назад, и обычного ветвления, если ветвление выполняет переход вперёд. Если необходимо, это предположение может быть позднее скорректировано механикой  предсказания ветвлений. 
 
-The code following a branch is executed speculatively until it is determined whether the prediction was right. We may implement features for running both sides of a branch speculatively at the same time. 
-\vspace{2mm}
+Код, следующий за ветвлением, спекулятивно выполняется, пока не определяется, было ли правильным предсказание. Мы можем реализовать возможности для одновременного спекулятивного выполнения обеих ветвей.
 
-The ForwardCom design allows large microprocessors with very long vector registers. This requires special design considerations. The chip layout of vector processors is typically divided into ``data lanes'' so that the vertical transfer of data from a vector element to the corresponding 
-vector element in another vector (i. e. same lane) is faster than the horizontal transfer of data from one vector element to another element at another position of the same vector (i. e. different lane). This means that instructions that transfer data horizontally across a vector, such as broadcast and permute instructions, may have longer latencies than other vector instructions. The scheduler needs to know the instruction latency, and this can be a problem if the latency depends on the distance of data transfer on very long vectors. This problem is addressed by indicating the vector length or the distance of data transfer for such instructions in a separate operand, which always uses the RS register field. This information may be redundant because the vector length is stored in the vector register operands, but the scheduler needs this information as early as possible. The other register operands are typically not ready until the clock cycle where they go to the execution unit, while the vector length is typically known earlier. The microprocessor can read the RS register at the address calculation stage in the pipeline, where it also reads any pointer, index register and vector length for memory operands. This allows the scheduler to predict the latency a few clock cycles in advance. The instruction set provides the extra information about vector length or data transfer length in RS for all instructions that involve horizontal data transfer, including memory broadcast, permute, insert, extract and shift instructions, but not broadcasting of immediate constants. 
-\vspace{2mm}
-
-The data path to the data cache and memory should be quite wide, possibly matching the maximum vector length, because cache access and memory access are typical bottlenecks.
-
-
+Дизайн  ForwardCom позволяет большие микропроцессоры с очень длинными векторными регистрами, что требует специальных обсуждений дизайна. 
+% The chip layout of vector processors is typically divided into ``data lanes'' so that the vertical transfer of data from a vector element to the corresponding 
+%vector element in another vector (i. e. same lane) is faster than the horizontal transfer of data from one vector element to another element at another position of the same vector (i. e. different lane). This means that instructions that transfer data horizontally across a vector, such as broadcast and permute instructions, may have longer latencies than other vector instructions. The scheduler needs to know the instruction latency, and this can be a problem if the latency depends on the distance of data transfer on very long vectors. This problem is addressed by indicating the vector length or the distance of data transfer for such instructions in a separate operand, which always uses the RS register field. This information may be redundant because the vector length is stored in the vector register operands, but the scheduler needs this information as early as possible. The other register operands are typically not ready until the clock cycle where they go to the execution unit, while the vector length is typically known earlier. The microprocessor can read the RS register at the address calculation stage in the pipeline, where it also reads any pointer, index register and vector length for memory operands. This allows the scheduler to predict the latency a few clock cycles in advance. The instruction set provides the extra information about vector length or data transfer length in RS for all instructions that involve horizontal data transfer, including memory broadcast, permute, insert, extract and shift instructions, but not broadcasting of immediate constants. 
+%\vspace{2mm}
+%
+%The data path to the data cache and memory should be quite wide, possibly matching the maximum vector length, because cache access and memory access are typical bottlenecks.
 \end{document}
