@@ -32,76 +32,64 @@
 
 Конец объединённого блока данных, находящихся в памяти, должен иметь неиспользуемое пространство того же размера, что и максимальная длина вектора. Это позволит команде restore\_cp читать больше, чем необходимо, при восстановлении вектора неизвестной длины;  а также позволит функции, находящей конец заканчивающейся нулём строки, читать по одному куску размером с длину вектора за раз, не вызывая нарушений доступа из--за чтения в недоступной части памяти.
 
-У большинства микропроцессорных систем стек растёт вниз. У системы ForwardCom дело обстоит так же, но, в основном, по другой причине.
-% When a vector register is saved on the stack, it is stored as the length followed by the amount of data indicated by the length. When the vector register is restored (using the restore\_cp instruction), it is necessary to read the length followed by the data. The stack pointer must point to the low end where the length is stored, otherwise it would be impossible to find where the length is stored. 
-%
-%\section{Thread memory protection} \label{threadMemoryProtection}
-%Each thread must have its own stack. The thread data (THREADD) may be placed on this stack. The ForwardCom system allows inter-thread memory protection. The stack data of the main thread of a program is accessible to all its child threads, but all other threads in the program can have private data which is not accessible to any other threads, not even to the main thread. Any communication and synchronization between threads must use static memory or memory belonging to the main thread. 
-%\vspace{2mm}
-%
-%It is recommended to use this inter-thread memory protection in all cases except where legacy software requires one memory space shared by all threads. 
-%\vspace{2mm}
-%
-%\subsubsection{Isolated memory blocks} \label{isolatedMemoryBlocks}
-%It is possible to make a system function that allocates an isolated memory block surrounded by inaccessible memory on both sides. Such a memory block, which will be accessible only to a specific thread, can be used for example for an input buffer in cases where security requirements are high. Each thread can have only a limited number of such protected memory blocks because of the limited size of the memory map.
-%
-%\section{Memory management} \label{memoryManagement}
-%It is a design goal to minimize memory fragmentation and to minimize the need for virtual address translation. Current designs often have very complicated memory management systems with multilevel address translation, large translation-lookaside-buffers (TLB), and huge page tables. We want to replace the TLB, which has a large number of fixed-size memory blocks, by a memory map with a few memory blocks of variable size. In most cases, the main thread of an application will only need three blocks of memory: CONST (read only), CODE (execute only), and the combined STACK+DATA+BSS+HEAP (read-write). A child thread needs one more entry for its private stack. Similar blocks are defined for system code. 
-%\vspace{2mm}
-%
-%A memory map with such a limited number of entries can easily be implemented on the chip in a very efficient way and it can easily be changed on task switches. Each process and each thread must have its own memory map. The memory is not organized into fixed-size pages. 
-%\vspace{2mm}
-%
-%The memory map supports virtual address translation in the form of a constant offset that defines the distance between the virtual address and the physical address for each map entry. The hardware should not waste time and power on virtual address translation when it is not used.
-%\vspace{2mm}
-%
-%A limited number of extra entries are provided in the memory map to deal with cases where the memory becomes fragmented, but memory fragmentation can be avoided in most cases. The following techniques are provided to simplify memory management and avoid memory fragmentation:
-%
-%\begin{itemize}
-%\item There is only one type of function libraries which can be used for both static and dynamic linking. These are linked with a mechanism that keeps the CONST, CODE and DATA sections contiguous with the similar sections of the main program in most cases. This technique is described on page \pageref{libraryLinkMethods} below.
-%
-%\item The required stack size is calculated by the compiler and the linker so that stack overflow can be avoided in most cases. This technique is described on page \pageref{predictingStackSize}.
-%
-%\item The operating system can keep statistical records of the heap use of each program in order to predict the required heap size. The same technique can be used for predicting stack use in cases where the required stack size cannot be predicted exactly (e. g. recursive function calls). 
-%\end{itemize}
-%
-%The memory space may become fragmented despite the use of these techniques. Problems that can result in memory fragmentation are listed below. 
-%
-%\begin{itemize}
-%\item Recursive functions can use unlimited stack space. We may require that the programmer specifies a maximum recursion level in a pragma.
-%
-%\item Allocation of variable-size arrays on the stack using the alloca function in C. We may require that the programmer specifies a maximum size. 
-%
-%\item Runtime linking. The program can reserve space for loading and linking function libraries at run time (see page \pageref{runtimeLinking}). The memory may become fragmented if the memory space reserved for this purpose turns out to be insufficient.
-%
-%\item Script languages and byte code languages. It is difficult to predict the required size of stack and heap when running interpreted or emulated code. It is recommended to use a just-in-time compiler instead. Self-modifying scripts cannot be compiled. The same problem can occur with large user-defined macros.
-%
-%\item Unpredictable number of threads without protection. The required stack size for a thread may be computed in advance, but in some cases it may be difficult to predict the number of threads that a program will generate. Multiple threads will mostly share the same code sections, but they need separate stacks. The stack of a thread can be placed anywhere in memory without problems if inter-thread memory protection is used. But if memory is shared between threads and the number of threads is unpredictable then the shared 
-%memory space may become fragmented. 
-%
-%\item Unpredictable heap size. Programs that process large amounts of data, e. g. multimedia processing, may need a large heap. A heap can use discontiguous memory, but this will require extra entries in the memory map. 
-%
-%\item Lazy loading and code overlay. A large program may have certain code units that are rarely used and loaded only when needed. Lazy loading can be useful to save memory, but it may require virtual memory translation and it may cause memory fragmentation. A straightforward solution is to implement such code units as separate executable programs. 
-%
-%\item Hot patching, i. e. updating of code while it is running. 
-%
-%\item Shared memory for inter-process communication. This requires extra entries in the memory map as explained below.
-%
-%\item Many programs running. The memory can become fragmented when many programs of different sizes are loaded and unloaded randomly or swapped to memory. 
-%\end{itemize}
-%
-%A possible remedy against overflow of stack and heap is to place the STACK, DATA, BSS and HEAP data together (in this order) in an address range with large unused virtual address spaces below and above, so that the stack can grow downwards and the heap can grow upwards into the vacant spaces. This method can avoid fragmentation of the virtual address space, but not the physical address space. Fragmentation of the physical address space can be remedied by moving data from a memory block of insufficient size to another block that is larger. This method has the cost of a time delay when the data are moved. 
-%\vspace{2mm}
-%
-%If runtime linking runs into memory problems and lack of memory map entries then it is allowed to mix CONST and CODE sections together in a common section with both read and execute access. If a library function contains constant data that originate from an untrusted source, while the code is trusted, then it is preferred to put the untrusted data into the DATA section rather than the CONST section in order to prevent execution of malicious code placed in the CONST section.
-%\vspace{2mm}
-%
-%\label{sharedMemory}
-%Shared memory can be used when there is a need to transfer large amounts of data between two processes. One process shares a part of its memory with another process. The receiving process needs an extra entry in its memory map to indicate read and/or write access rights to the shared memory block. The process that owns the shared memory block does not need any extra entry in its memory map. There is a limit to how many shared memory blocks an application can receive access to, because we want to keep the memory map small. If one program needs to communicate with a large number of other programs then we can use one of these solutions: (1) let the program that needs many connections own the shared memory and give each of its clients access to one part of it, (2) run multiple threads in (or multiple instances of) the program that needs many connections so that each thread has access to only one shared memory block, (3) let multiple communication channels use the same shared memory block or parts of it, (4) communicate through function calls, (5) communicate through network sockets, or (6) communicate through files. 
-%\vspace{2mm}
-%
-%Executable memory cannot be shared between different applications. The mechanism of interprocess calls must be used if one application needs to call a function in another application. This is described on page \pageref{interProcessCalls}. 
-%\vspace{2mm}
-%
-%We can probably keep memory fragmentation so low, by using the principles discussed here, that a relatively small memory map for each thread will be sufficient to cover normal cases. This will be much more efficient than the large TLB and multilevel address translation of current designs. It will save silicon space and power, and we can avoid the cost of TLB misses and page faults, and it will make task switches very fast.
+У большинства микропроцессорных систем стек растёт вниз. У системы ForwardCom дело обстоит так же, но, в основном, по другой причине. Когда в стеке сохраняется векторный регистр, он сохраняется так: сначала идёт длина, а потом --- количество данных, указанное длиной. Когда векторный регистр восстанавливается (с использованием команды restore\_cp), необходимо прочесть  длину, за которой идут данные. Указатель стека должен указывать на младший адрес, где хранится длина, иначе было бы невозможно найти, где длина хранится.
+
+\section{Защита памяти потока} \label{threadMemoryProtection}
+У каждого потока обязательно должен быть свой собственный стек. Данные потока (THREADD) могут быть размещены в этом стеке. Система ForwardCom позволяет межпоточную защиту памяти. Стековые данные основного потока программы доступны всем её дочерним потокам, но все прочие потоки программы могут иметь закрытые данные, недоступные никаким другим потокам, даже основному. Любая коммуникация между потоками или синхронизация таковых обязательно должна использовать статическую память или память, принадлежащую основному потоку.
+
+Рекомендуется использовать эту межпоточную защиту памяти во всех случаях, исключая устаревшее программное обеспечение, требующее единого пространства памяти, разделяемого всеми потоками.
+
+\subsubsection{Изолированные блоки памяти} \label{isolatedMemoryBlocks}
+Возможно создание системной функции, выделяющей изолированный блок памяти, с обеих сторон окружённого недоступной памятью. Такой блок памяти, который будет недоступен только конкретному потоку, может использоваться, например, для входного буфера, в случае высоких требований к безопасности. Каждый поток может иметь лишь ограниченное количество таких защищённых блоков памяти, из--за ограниченного размера карты памяти.
+
+\section{Управление памятью} \label{memoryManagement}
+Цель дизайна --- минимизировать фрагментацию памяти и необходимость в трансляции виртуальных адресов. В имеющихся дизайнах часто имеются очень сложные системы управления памятью, с многоуровневой трансляцией адресов, больш\'{и}м буфером ассоциативной трансляции (translation-lookaside-buffers, TLB), и огромными таблицами страниц. Мы хотим заменить TLB, имеющий большое количество блоков памяти фиксированного размера, картой памяти, имеющей небольшое количество блоков памяти переменного размера. В большинстве случаев основному потоку приложения будет необходимо лишь три блока памяти CONST (только для чтения), CODE (только для выполнения), и объединённые STACK+DATA+BSS+HEAP (для чтения и записи). Дочернему потоку нужен ещё один блок, для своего закрытого стека. Аналогичные блоки определяются для системного кода.
+
+Карту памяти с таким ограниченным количеством элементов можно  легко реализовать на кристалле, очень эффективным способом, и можно легко изменять при переключении задач. Каждый процесс и каждый поток обязан иметь свою собственную карту памяти. Эта память не разбивается на страницы фиксированного размера. 
+
+Карта памяти поддерживает трансляцию виртуальных адресов, в виде константного смещения, для каждого элемента карты определяющего расстояние между виртуальным адресом и физическим. Аппаратуре не следует тратить время и энергию на трансляцию виртуальных адресов, когда она не используется.
+
+В карте памяти предоставляется ограниченное количество дополнительных элементов, чтобы обработать случаи, когда память становится фрагментированной. Однако в большинстве случаев фрагментации памяти можно избежать. Для упрощения управления памятью и устранения фрагментации памяти предоставляются следующие приёмы:
+\begin{itemize}
+\item Есть только один тип библиотек функций, который можно использовать и для статической компоновки, и для динамической. Они компонуются с помощью механизма, в большинстве случаев сохраняющего непрерывность расположения секций CONST, CODE и DATA с аналогичными секциями основной программы. Данный приём описан ниже, на с.~\pageref{libraryLinkMethods}.
+
+\item Требуемый размер стека вычисляется компилятором и компоновщиком, так что в большинстве случаев переполнения стека можно избежать. Данный приём описан на с.~\pageref{predictingStackSize}.
+
+\item Операционная система может сохранять статистические записи о размере кучи каждой программы, чтобы предсказать требуемый размер кучи. Тот же самый приём можно использовать для предсказания размера стека, когда размер стека нельзя предсказать точно (например, при рекурсивных вызовах функций). 
+\end{itemize}
+
+Несмотря на использование этих приёмов, пространство памяти может стать фрагментированным. Проблемы, который могут стать результатом фрагментации памяти, перечислены ниже.
+\begin{itemize}
+\item Рекурсивные функции могут использовать неограниченное пространство стека. Мы можем потребовать, чтобы программист указывал прагмой максимальный уровень рекурсии.
+
+\item Выделение в стеке памяти для массивов переменного размера с помощью C--функции alloca. Мы можем потребовать, чтобы программист указывал максимальный размер.
+
+\item Компоновка времени выполнения. Программа может резервировать место для загрузки и компоновки библиотек функций во время выполнения (см. с.~\pageref{runtimeLinking}). Память может стать фрагментированной, если памяти, зарезервированной для этой цели, оказалось недостаточно.
+
+\item Языки сценариев и языки, использующие байт--код.  Сложно предсказать требуемый размер стека и кучи при выполнении интерпретируемого или эмулируемого кода. Рекомендуется вместо этого использовать компиляцию \glqq на лету\grqq. Самомодифицирующиеся сценарии компилироваться не могут. Та же проблема может возникнуть с большими определяемыми пользователем макросами.
+
+\item Непредсказуемое количество потоков без защиты. Требуемый размер стека для потока может быть вычислен заранее, но в некоторых случаях предсказание количества потоков, которые программа породит, может оказаться сложным. Много потоков будет, в основном, разделять одну и ту же секцию кода, но им нужны отдельные стеки. Стек потока, если используется межпоточная защита памяти, без проблем может располагаться где угодно в памяти.
+Однако, если память разделяется между потоками, и количество потоков --- непредсказуемо, то область разделяемой памяти может стать фрагментированной.
+
+\item Непредсказуемый размер кучи. Программам, обрабатывающим большие объёмы данных, например, обрабатывающие мультимедиа, может потребоваться большая куча. Куча может использовать не смежные области памяти, но это потребует дополнительных элементов в карте памяти.
+
+\item Ленивая загрузка и перекрытия кода. Большая программа может иметь некоторые модули кода, которые редко используются, и загружаются только по необходимости. Ленивая загрузка может быть полезной для экономии памяти, но она может потребовать трансляции виртуальной памяти, и может вызвать фрагментацию памяти. Прямолинейное решение состоит в реализации таких модулей кода в виде отдельных исполняемых программ. 
+
+\item Горячее обновление, т.е. обновление кода во время его работы. 
+
+\item Разделяемая память для связи между процессами. Это, как объяснено ниже, требует дополнительных элементов в карте памяти.
+
+\item Выполнение многих программ. Память может стать фрагментированной, когда случайно загружается и выгружается, или сбрасывается в память, много программ разных размеров,
+\end{itemize}
+
+Возможным средством от переполнения стека и кучи является размещение STACK, DATA, BSS и HEAP совместно (в этом порядке), в адресном диапазоне с большими неиспользуемыми адресными пространствами ниже и выше, так что стек может расти вниз (в сторону младших адресов), а куча --- вверх, в свободное место. Данный метод может устранить фрагментацию виртуального адресного пространства, но не физического. Фрагментацию физического адресного пространства можно вылечить перемещением данных из блока памяти недостаточного размера в другой блок, большего размера. У этого метода есть цена --- задержка во времени при перемещении данных. 
+
+Если компоновка во время выполнения работает в памяти, и отсутствуют элементов карты памяти, то допускается смешивать секции CONST и CODE в одну общую секцию, с доступом и по чтению, и на выполнение. Если библиотека функций содержит константные данные, исходящие из недоверенного источника, тогда как код --- доверен, то предпочтительнее поместить недоверенные данные в секцию DATA, а не CONST, чтобы предотвратить выполнение зловредного кода, помещённого в секции CONST.
+
+\label{sharedMemory}
+Разделяемая память может использоваться, когда имеется необходимость передачи больших объёмов данных между двумя процессами. Один процесс разделяет часть своей памяти с другим процессом. Процессу--получателю нужен дополнительный элемент в своей карте памяти, с тем, чтобы для разделяемого блока памяти указать права на чтение и/или запись.Процессу, владеющему блоком разделяемой памяти, не нужно никаких дополнительных элементов в его карте памяти. Имеется ограничение на то, к скольким блокам разделяемой памяти приложение может получить доступ, ибо мы хотим сохранить карту памяти малой. Если одной программе нужно общаться с большим количеством других программ, то мы можем использовать одно из следующих решений: (1) позволить программе, которой нужно много связей, владеть разделяемой памятью, и дать каждому из её клиентов доступ к одной из частей этой памяти; (2) выполнять в программе, которой нужно много связей, много потоков, или выполнять много экземпляров такой программы, так, чтобы каждый поток имел доступ только к одному разделяемому блоку памяти; (3) позволить много каналов коммуникации, использующих один и тот же блок разделяемой памяти, или части его;  (4) общаться через вызовы функций; (5) общаться через сетевые сокеты; или (6) общаться через файлы. 
+
+Исполняемая память не может разделяться между разными приложениями. Если одному приложению нужно вызвать функцию другого приложения, обязательно нужно использовать механизм межпроцессных вызовов, описанный на с.~\pageref{interProcessCalls}. 
+
+Используя обсуждённые здесь принципы, мы можем, вероятно, сохранить фрагментацию памяти столь малой, что для охвата нормальных случаев для каждого потока будет достаточно малой карты памяти, что будет намного эффективнее, нежели большой TLB и многоуровневая трансляция адресов имеющихся дизайнов. Это сэкономит объём кремния и энергию, и мы можем избежать платы за промахи TLB и отсутствие страниц, что сделает переключение задач очень быстрым.
 \end{document}
