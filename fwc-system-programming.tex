@@ -10,117 +10,88 @@
 
 \item Драйвера устройств и подключаемые модули системы имеют тщательно управляемые права доступа. Структура, подобная карте памяти (см. с.~\pageref{memoryManagement}) даёт драйверу устройства доступ к конкретному диапазону необходимых драйверу портов ввода--вывода и системных регистров. Пользовательское приложение может дать драйверу устройства права на чтение и запись для конкретного диапазона памяти данных, которым оно владеет. Это выполняется через команду системного вызова. У драйвера устройства нет прав на память кода вызвавшего его приложения. Последнее означает, что указатели на функции обратного вызова с системными вызовами использоваться не могут.
 
-\item
-% An application program has access to only the memory that is allocated to it or shared with it. Memory belonging to a thread is usually not shared with other threads in the same process. Application programs have access to a few system registers and no input/output ports.
+\item Прикладная программа имеет доступ только к памяти, которая ею выделена или с ней разделяется. Память, принадлежащая потоку, обычно не разделяется с другими потоками того же процесса. Прикладные программы имеют доступ к немногим системным регистрам и не имеют доступа к портам ввода--вывода.
 \end{itemize}
-%
-%Transitions between these levels are managed by the system call and system return instructions and by traps and interrupts.
-%\vspace{2mm}
-%
-%There are various system registers for control purposes. In addition, there are two sets of registers used for temporary storage, one set for the device driver level and one for the system core level. The temporary registers for the device driver level are cleared for security reasons every time a device driver is called. These registers are used mainly for temporary saving of the general purpose registers.
-%
-%\section{Memory map}
-%There are three kinds of memory access: read, write and execute access. These kinds of access are separate, but can be combined. For example, execute access does not imply read access. Write access and execute access should not normally be combined, because self-modifying code is discouraged.
-%\vspace{2mm}
-%
-%The memory map is stored in the CPU chip. Each entry has three fields: A virtual address (up to 64 bits), access rights (3 bits), and an addend for address translation (up to 64 bits). There is no memory paging. Instead, the memory blocks have variable sizes.
-%\vspace{2mm}
-%
-%The entries in the memory map must be kept sorted at all times so that each memory block ends where the next block begins. The addresses must be divisible by 8. Each thread has its own memory map. A typical memory map for an application thread may look like this.
-%
-%\begin{longtable} {|p{22mm}|p{20mm}|p{20mm}|p{70mm}|}
-%\caption{Example of memory map} \\
-%\endfirsthead
-%\endhead
-%\hline
-%\bfseries Start address & \bfseries Access & \bfseries Addend & \bfseries Comment  \\
-%\hline
-%0x10000   & Read    & 0 & CONST section \\
-%0x10100   & Execute & 0 & CODE section \\
-%0x10800   & None    & 0 & Belongs to other processes \\
-%0x20000   & Read, Write & 0 & Main STACK, DATA, BSS, and HEAP sections \\
-%0x24000   & None    & 0 & Belongs to other processes \\
-%0x30000   & Read, Write & 0 & Thread STACK, thread environment block, and tread static data \\
-%0x32000   & None    & 0 & The rest belongs to other processes \\
-%\hline
-%\end{longtable}
-%
-%There may be a few further entries for memory blocks shared between processes and for secure isolated memory blocks. A virtual memory block may have multiple entries in case the memory becomes fragmented. The addends are used for keeping the virtual addresses of the block contiguous while the physical addresses are noncontiguous. The start addresses are virtual memory addresses.
-%\vspace{2mm}
-%
-%The size of the memory map is variable. The maximum size is implementation dependent. There are at least three memory maps on the chip, one for each privilege level. This makes transitions between the levels fast. The chip space used for memory maps may be reconfigurable so that the memory maps of multiple processes can remain on the chip in case the memory maps are small. This makes task switching faster.
-%\vspace{2mm}
-%
-%The memory maps are controlled at the system core level. The instructions read\_memory\_map and write\_memory\_map use the vector loop mechanism for fast manipulation of memory maps.
-%\vspace{2mm}
-%
-%The methods described on page \pageref{memoryManagement} for avoiding memory fragmentation are important for keeping the memory maps small. 
-%\vspace{2mm}
-%
-%Task switches will be very fast because we have replaced the large page tables and translation-lookaside-buffer (TLB) of traditional systems with a small on-chip memory map. This makes the system suitable for real-time operating systems.
-%
-%\section{Call stack}
-%It is possible to have either a unified stack for function data and return addresses or two separate stacks. See page \pageref{callStackAlternatives}. ForwardCom currently supports both systems. The two-stack system is safer and more efficient, while the single-stack system may be used for small processors where the simpler single-stack system is preferred.
-%\vspace{2mm}
-%
-%The two-stack system has the call stack stored inside the CPU rather than in RAM memory. A method is required for saving this stack to memory when it is full. This method may be similar to the method used for saving the memory map, as described above, using vector-size memory access. It should be possible to manipulate the call stack for task switches and for stack unrolling in the exception handler.
-%
-%\section{System calls and system functions} \label{systemCallIDSystem}
-%Calls to system functions are made with a system call instruction (sys\_call). The system call instruction does not use addresses, but ID numbers. Each ID number consists of a function ID in the lower half and a module ID in the upper half. The module ID identifies a system module or device driver. The system core has ID = 0. Each part of the ID can be either 16 bits or 32 bits so that the combined ID is either 32 bits or 64 bits. 
-%\vspace{2mm}
-%
-%System add-on modules and device drivers do not necessarily have fixed ID numbers because this would require some central authority to assign these ID numbers. Instead, the program will have to ask for the ID number by giving the name of the module. The functions within a module can have fixed or variable ID numbers.
-%\vspace{2mm}
-%
-%There will be a system function (with a fixed ID number) which takes the names of module and function as input and returns the ID number. The ID number can be retrieved in this way before the first call to the function.
-%\vspace{2mm}
-%
-%The ID number of a system function can be put into the program in three ways: 
-%\begin{enumerate}
-%\item The most important system functions have fixed ID numbers which can be inserted at compile time. 
-%
-%\item The ID number can be found at load time in the same way as load-time linking works. This is described on page \pageref{loadTimeLinking}. 
-%The loader will find the ID number and insert it in the code before running the program. 
-%
-%\item The ID number is found at run time before the first call to the desired function. 
-%\end{enumerate}
-%
-%The calling convention for system functions is the same as for other functions, using registers for parameters and for return value. 
-%The registers used for parameters are determined by the general calling convention. 
-%The calling conventions are described on page \pageref{functionCallingConventions}.
-%The parameter registers should not be confused with the operands for the system call instruction. 
-%\vspace{2mm}
-%
-%The system call instruction has three operands. The first operand is the combined ID, contained in a register (RT) or an immediate constant. The second operand (RD) is a pointer to a memory block that may be used for transferring data between the calling program and the system function. The third parameter (RS) is the size of this memory block. The last two parameters must be divisible by 8. 
-%\vspace{2mm}
-%
-%The calling thread must have access rights to the memory block that it shares with the system 
-%function. This can be read access or write access or both. These access rights are transferred to the system function. The system function has no access rights to any other part of the application's memory.
-%\vspace{2mm}
-%
-%It is not possible to use callback function pointers with a system call because executable memory cannot be shared with a system function. Instead, the system function can call an exported function provided by the application, using the method for inter-process calls, described below.
-%\vspace{2mm}
-%
-%Device driver functions should preferably have separate stacks. The system call goes first to the system core which assigns a stack to the device driver function and makes a memory map for it before dispatching the call to the desired function. Preferably, no stack is used during this dispatching. The two registers identifying a shared memory block are copied to special registers which are accessible to the called function. The system function runs in the same thread as the application that called it, but not with the same stack. 
-%\vspace{2mm}
-%
-%The old values of instruction pointer, stack pointer, DATAP and memory map are saved in system registers, to be restored by the system return instruction. 
-%\vspace{2mm}
-%
-%System functions, device drivers and interrupt handlers are allowed to use all general purpose registers and vector registers if they are saved and restored according to the normal calling conventions. Interrupt handlers must save and restore all registers they use. 
-%\vspace{2mm}
-%
-%A method is provided to get information about the register use of system functions so that it is possible to call them using the register usage conventions of either method 1 or method 2, described on page \pageref{registerUsageConvention}. The stack use of system functions is irrelevant for the caller because they do not use the stack of the calling application program. 
-%\vspace{2mm}
-%
-%Some important system functions must be standardized and must be available in all operating systems. This will make it possible, for example, to make a third-party function library that works in all operating systems, even if this library needs to call system functions. It will also make it easier to adapt a program for different operating systems. The list of system functions that might be standardized includes functions for thread creation, thread synchronization, setting thread priority, memory allocation, time measurement, system information, access to environment variables, etc. 
-%\vspace{2mm}
-%
-%There should be a selection of system libraries providing the most common user interface forms, such as graphical user interface, console mode, and server mode. These user interface system libraries should be provided for each operating system that the architecture can run on, so that the same executable program can run in different operating systems simply by linking with the appropriate user interface library at load time. Such user interface libraries may be based on existing platform-independent GUI libraries such as, e. g., wxWidgets or QT. All user interface libraries must support the error\_message function mentioned below. 
-%
-%\section{Inter-process calls} \label{interProcessCalls}
+
+Переходы между этими уровнями управляются командами системного вызова и системного возврата, а также ловушками и прерываниями.
+
+Для целей управления имеются различные системные регистры. Дополнительно имеется два набора регистров, используемых для временного хранения, один набор --- для уровня драйверов устройств, и один --- для уровня ядра системы. Временные регистры для уровня драйверов устройств при каждом вызове драйвера устройства очищаются, по причинам, связанным с безопасностью. Эти регистры, в основном, используются для временного сохранения регистров общего назначения.
+
+\section{Карта памяти}
+Имеется три вида доступа к памяти: чтение, запись, и выполнение. Эти виды доступа различны, но могут комбинироваться. Например, доступ на выполнение не влечёт доступа по чтению. Доступ на запись и доступ на выполнение обычно комбинировать не следует, поскольку самомодифицирующийся код --- отталкивающ.
+
+Карта памяти сохраняется на кристалле ЦП. Каждый элемент имеет три поля: виртуальный адрес (вплоть до 64 разрядов), права доступа (3 разряда), и слагаемое для трансляции адреса (вплоть до 64 разрядов). Разбиения памяти на страницы нет. Вместо этого имеются блоки памяти переменных размеров.
+
+Элементы карты памяти обязаны всё время храниться в отсортированном виде, так, чтобы каждый блок памяти заканчивался там, где начинается следующий блок. Адреса обязательно должны быть кратны 8. Каждый поток имеет свою собственную карту памяти. Типичная карта памяти для потока приложения может выглядеть примерно так:
+
+\begin{longtable} {|p{22mm}|p{30mm}|l|p{80mm}|}
+\caption{Пример карты памяти} \\
+\endfirsthead
+\endhead
+\hline
+\bfseries Начальный адрес & \bfseries Права & \bfseries Слагаемое & \bfseries Комментарий  \\ \hline
+0x10000                   & чтение          & 0                   & Секция CONST.\\
+0x10100                   & выполнение      & 0                   & Секция CODE. \\
+0x10800                   & нет             & 0                   & Принадлежит другим процессам. \\
+0x20000                   & чтение, запись  & 0                   & Основные разделы STACK, DATA, BSS, HEAP. \\
+0x24000                   & нет             & 0                   & Принадлежит другим процессам. \\
+0x30000                   & чтение, запись  & 0                   & Секция STACK потока, блок окружения потока, и статические данные потока. \\
+0x32000                   & нет             & 0                   & Остальное принадлежит другим процессам. \\ \hline
+\end{longtable}
+
+Может быть некоторое количество дополнительных элементов, для блоков памяти, разделяемых между процессами, и для безопасно изолированных блоков памяти. В случае, когда память становится фрагментированной, блок виртуальной памяти может иметь несколько элементов. Слагаемые используются для того, чтобы сохранить виртуальные адреса блоков смежными, в то время как физические адреса смежными не являются. Начальные адреса ---  это адреса в виртуальной памяти.
+
+Размер карты памяти --- переменный. Максимальный размер зависит от реализации. На кристалле имеется по меньшей мере три карты памяти, по одной для каждого уровня привилегий, что делает переходы между уровнями быстрыми. Пространство на кристалле, используемое для карты памяти. Область на кристалле, используемая для карт памяти, может быть реконфигурируемой, так что в случае, когда карты памяти малы, карты памяти многих процессов могут оставаться на кристалле.
+
+Карты памяти управляются уровнем ядра системы. Команды read\_memory\_map и write\_memory\_map используют механизм векторного цикла для быстрой манипуляции картами памяти.
+
+Методы устранения фрагментации памяти, описанные на с.~ \pageref{memoryManagement}, важны для сохранения карт памяти малыми.
+
+Переключения задач будут очень быстрыми, поскольку мы заменили большие таблицы страниц и буферы ассоциативной трансляции (translation-lookaside-buffer, TLB) традиционных систем малой хранящейся на кристалле картой памяти, что делает систему подходящей для операционных систем реального времени.
+
+\section{Стек вызовов}
+Возможно наличие либо унифицированного стека (и для данных функций, и для адресов возврата), либо двух отдельных стеков. См. с.~\pageref{callStackAlternatives}. В настоящее время ForwardCom поддерживает обе системы. Двухстековая система --- безопаснее и эффективнее, тогда как одностековая система может использоваться для малых процессоров, где предпочтительнее более простая одностековая система.
+
+У двухстековой системы имеется стек вызовов, сохраняемый внутри ЦП, а не в ОЗУ. Требуется метод сохранения этого стека, когда он заполнен. Данный метод схож с методом, используемым для сохранения карты памяти, как описано выше, использующим векторные обращения к памяти. Должна быть возможна манипуляция со стеком вызовов, для переключений задач и для раскрутки стека в обработчике исключения.
+
+\section{Системные вызовы и системные функции} \label{systemCallIDSystem}
+Вызовы системных функций выполняются с помощью команды системного вызова (sys\_call). Команда системного вызова использует не адреса, а номера, ID. Каждый номер (ID) состоит из (в младшей половине) ID функции, и (в старшей половине) ID модуля. ID модуля идентифицирует модуль системы или драйвер устройства. У ядра системы ID = 0. Каждая часть ID может быть либо 16--разрядной, либо 32--разрядной, так что скомбинированный ID может быть либо 32--разрядным, либо 64--разрядным.
+
+Дополнительным модулям системы и драйверам устройств нет необходимости иметь фиксированные номера ID, поскольку это потребовало бы некоторого центрального авторитета, присваивающего эти номера. Вместо этого программа будет должна запросить номер ID, задав имя модуля. Функции в пределах модуля могут иметь фиксированные или переменные номера ID.
+
+Будет системная функция (с фиксированным номером ID), принимающая в качестве аргументов имя модуля и функции, и возвращающая номер ID. Номер ID  таким способом может быть подобран при первом вызове этой функции.
+
+Номер ID системной функции может быть помещён в программу тремя способами:
+\begin{enumerate}
+\item Наиболее важные системные функции имеют фиксированные номера ID, которые можно вставить во время компиляции.
+
+\item Номер ID может быть найден во время загрузки, тем же способом, что и при компоновке во время загрузки. Это описано на с.~\pageref{loadTimeLinking}. Загрузчик найдёт номер ID и вставит его в код перед запуском программы.
+
+\item Номер ID находится во время выполнения, перед первым вызовом желаемой функции. 
+\end{enumerate}
+
+Соглашения вызова для системных функций --- те же, что и для других функций, использующих регистры для параметров и для возврата значения. Регистры, используемые для параметров, определяются общим соглашением вызова. Соглашения вызова описаны на с.~\pageref{functionCallingConventions}. Регистры для параметров не следует путать с операндами для команды системного вызова.
+
+Команда системного вызова имеет три операнда. Первый операнд --- скомбинированный ID, помещённый в регистр (RT) или в непосредственно заданную константу. Второй операнд (RD) --- указатель на блок памяти, который может быть использован для передачи данных между вызывающей программой и системной функцией. Третий параметр (RS) --- размер этого блока памяти. Последние два параметра должны быть кратны 8. 
+
+Вызывающий поток обязан иметь право на доступ к блоку памяти, который он разделяет с системной функцией. Это может быть право на чтение, право на запись, или и на то, и на другое. Эти права доступа передаются системной функции. У системной функции нет прав доступа ни к какой другой части памяти приложения.
+
+С системными вызовами невозможно использовать указатели на функции обратного вызова, поскольку исполняемая память с системной функцией разделяться не может. Вместо этого системная функция может вызвать экспортируемую функцию, предоставляемую приложением, используя метод для межпроцессных вызовов, описанный ниже.
+
+Функциям драйвера устройства предпочтительнее иметь отдельные стеки. Системный вызов идёт сначала в ядро системы, которое назначает стек для функции драйвера устройства и создаёт карту памяти для неё перед перенаправлением вызова на желаемую функцию. Во время этого перенаправления предпочтительнее не использовать никакого стека. Два регистра, идентифицирующих блок разделяемой памяти, копируются в специальные регистры, доступные вызванной функции. Системная функция выполняется в том же потоке, что и вызвавшее её приложение, но не с тем же самым стеком. 
+
+Старые значения указателя команд, указателя стека, регистра DATAP и карты памяти сохраняются в системных регистрах, чтобы быть восстановленными командой системного возврата. 
+
+Системным функциям, драйверам устройств, и обработчикам прерываний разрешается использовать все регистры общего назначения и векторные регистры, если они сохраняются и восстанавливаются согласно нормальным соглашениям вызова. Обработчики прерываний обязаны сохранять и восстанавливать все регистры, которые они используют.
+
+Предоставляется метод для получения сведений об использовании регистров системной функцией, так что возможен их вызов с помощью соглашений об использовании регистров или методом 1, или методом 2, описанным на с.~\pageref{registerUsageConvention}. Использование стека системными функциями не имеет никакого отношения к вызывающему, ибо они не используют стек вызова прикладной программы.
+
+Некоторые важные системные функции обязательно должны быть стандартизированы и доступны во всех операционных системах, что сделает возможным, например, создание сторонней библиотеки функций, работающей во всех операционных системах, даже если этой библиотеке нужно вызывать системные функции. Это также облегчит адаптацию программ для разных операционных систем. Список системных функций, которые могли бы быть стандартизированы, включает функции для создания потоков, синхронизации потоков, установки приоритета потоков, выделения памяти, измерения времени, системные сведения, обращение к переменным окружения, и т.д.
+
+Следовало бы отобрать системные библиотеки, предоставляющие наиболее распространённые виды пользовательского интерфейса, такие, как графический пользовательский интерфейс, консольный режим, и серверный режим. Эти библиотеки пользовательского интерфейса следует предоставлять для каждой операционной системы, которая может работать на нашей архитектуре, так что одна и та же исполняемая программа может работать в разных операционных системах, просто посредством компоновки, в момент загрузки, с подходящей библиотекой пользовательского интерфейса. Такие библиотеки пользовательского интерфейса могут быть основаны на существующих платформенно--независимых библиотеках GUI, таких, как, например, wxWidgets или QT. Все библиотеки пользовательского интерфейса обязаны поддерживать функцию error\_message, упомянутую ниже. 
+
+\section{Межпроцессные вызовы} \label{interProcessCalls}
 %Inter-process calls are mediated by a system function. This works in the following way. An application program can export a function with an entry in its executable file header. Another application can get access to this exported function by calling a system function that checks for permission and switches the memory map, the DATAP and THREADP registers and the stack pointer before calling the exported function, and switches back before returning to the caller. The call will appear as a separate thread to the called program. The general purpose registers and vector registers can be used for parameters and return value in the same was as for normal functions. This mechanism does not generate any shared memory between caller and callee. Therefore, the exported function must use only simple types that fit into registers for its parameters and return type. A block of memory can be shared between the two processes as described on page \pageref{sharedMemory}. 
-%
 %
 %\section{Error message handling} \label{errorMessageHandling}
 %There is a need for a standardized way of reporting errors that occur in a program. Many current systems fail to satisfy this need, or they use methods that are not portable or thread-safe. In particular, the following situations would benefit from such a standard. 
@@ -149,5 +120,4 @@
 %\vspace{2mm}
 %
 %The error\_message function may or may not return. If it returns then the function that called it must return in a graceful way. The error\_message function may alternatively terminate the application or it may raise an exception or trap which is handled by the operating system in case the exception is not caught by the program. 
-%\vspace{2mm}
 \end{document}
