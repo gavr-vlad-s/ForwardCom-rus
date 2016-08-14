@@ -91,33 +91,26 @@
 Следовало бы отобрать системные библиотеки, предоставляющие наиболее распространённые виды пользовательского интерфейса, такие, как графический пользовательский интерфейс, консольный режим, и серверный режим. Эти библиотеки пользовательского интерфейса следует предоставлять для каждой операционной системы, которая может работать на нашей архитектуре, так что одна и та же исполняемая программа может работать в разных операционных системах, просто посредством компоновки, в момент загрузки, с подходящей библиотекой пользовательского интерфейса. Такие библиотеки пользовательского интерфейса могут быть основаны на существующих платформенно--независимых библиотеках GUI, таких, как, например, wxWidgets или QT. Все библиотеки пользовательского интерфейса обязаны поддерживать функцию error\_message, упомянутую ниже. 
 
 \section{Межпроцессные вызовы} \label{interProcessCalls}
-%Inter-process calls are mediated by a system function. This works in the following way. An application program can export a function with an entry in its executable file header. Another application can get access to this exported function by calling a system function that checks for permission and switches the memory map, the DATAP and THREADP registers and the stack pointer before calling the exported function, and switches back before returning to the caller. The call will appear as a separate thread to the called program. The general purpose registers and vector registers can be used for parameters and return value in the same was as for normal functions. This mechanism does not generate any shared memory between caller and callee. Therefore, the exported function must use only simple types that fit into registers for its parameters and return type. A block of memory can be shared between the two processes as described on page \pageref{sharedMemory}. 
-%
-%\section{Error message handling} \label{errorMessageHandling}
-%There is a need for a standardized way of reporting errors that occur in a program. Many current systems fail to satisfy this need, or they use methods that are not portable or thread-safe. In particular, the following situations would benefit from such a standard. 
-%
-%\begin{enumerate}
-%\item A function library detects an error, for example an invalid parameter, and needs to report the error to the calling program. The calling program will decide whether to recover from the error or terminate. 
-%
-%\item A trap is generated because of a numerical error. The program fails to catch it as an exception, or the programming language has no support for structured exception handling. The operating system must make an informative error message. 
-%
-%\item A program can run in different environments that require different forms of error handling. 
-%
-%\item A function library in source code form, a class library, or any other piece of code needs to report an error without knowing which user interface paradigm is used (e. g. console mode or graphical user interface). It needs a standardized way of reporting the error to the operating system or to the user interface framework, which must present an error 
-%message to the user in the way that is appropriate for the user interface (e. g. pop up a message box, print to stderr, print to a log file, or send a message to an administrator).
-%\end{enumerate}
-%
-%\label{errorReportFunction}
-%It is proposed to define a standard library function named error\_message for this purpose. All user interface frameworks must define this function. It is possible to automatically choose between different versions of this function at run time depending on system settings, using the function dispatch feature described on page \pageref{libraryFunctionDispatchSystem}. The main program may override this function by defining its own function with the same name. 
-%\vspace{2mm}
-%
-%The error\_message function must have the following parameters: a numerical error code, a string pointer giving an error message, and another string pointer giving the name of the function where the error occurred. These strings are coded as zero-terminated UTF-8 strings. 
-%The error message is in the English language by default. It is not reasonable to require support for many different languages (see 
-%\href{https://en.wikibooks.org/wiki/Usability_for_Nerds/Software/Internationalization}{this link} for a discussion of problems with internationalization). Instead, a manual in the desired language can contain a list of error codes. 
-%\vspace{2mm}
-%
-%The error message string may include numerical values and diagnostic information, such as the value of a parameter that is out of range.
-%\vspace{2mm}
-%
-%The error\_message function may or may not return. If it returns then the function that called it must return in a graceful way. The error\_message function may alternatively terminate the application or it may raise an exception or trap which is handled by the operating system in case the exception is not caught by the program. 
+Межпроцессные вызовы опосредуются системной функцией. Работает это следующим образом. Прикладная программа может экспортировать функцию с элементом в заголовке своего исполняемого файла. Другое приложение может получить доступ к этой экспортированной функции посредством вызова системной функции, проверяющей разрешения и переключающей карту памяти, регистры DATAP и THREADP, и указатель стека перед вызовом экспортированной функции, и переключающей обратно перед возвратом в вызвавшую программу. Вызов возникнет как отдельный поток вызванной программы. Регистры общего назначения и векторные регистры могут использоваться для передачи параметров и возвращаемого значения так же, как это было бы для нормальных функций. Данный механизм не порождает никакой разделяемой вызвавшим и вызывающим памяти. Следовательно, экспортируемая функция обязана использовать лишь простые типы, помещающиеся в регистры, для своих параметров и для возвращаемого значения. Блок памяти может разделяться между двумя процессами так, как описано на с.~\pageref{sharedMemory}. 
+
+\section{Обработка сообщений об ошибках} \label{errorMessageHandling}
+Имеется необходимость в стандартизированном способе сообщения об ошибках, возникающих в программе. Многим имеющимся системам не удаётся удовлетворить эту потребность, или они используют методы, которые либо не переносимы, либо не являются потокобезопасными. В частности, от такого стандарта выиграли бы следующие ситуации.
+\begin{enumerate}
+\item Библиотека функций обнаруживает ошибку, например, неверный параметр, и ей нужно сообщить об ошибке вызывающей программе. Вызывающая программа примет решение: восстановиться ли после ошибки, или завершить работу.
+
+\item Из--за числовой ошибки порождается ловушка. Программе не удаётся перехватить её как исключение, или в языке программирования нет поддержки структурной обработки исключений. Операционная система обязана выдать информативное сообщение об ошибке.
+
+\item Программа может выполняться в разных окружениях, требующих разных форм обработки ошибок. 
+
+\item Библиотеке функций в форме исходного кода, библиотеки классов, или любой другой части кода, необходимо сообщать об ошибке, не зная, какая используется парадигма пользовательского интерфейса (например, консольный режим или графический пользовательский интерфейс). Необходим стандартизированный способ передачи сообщения об ошибке в операционную систему или каркас пользовательского интерфейса, которые обязаны представить сообщение об ошибке пользователю способом, подходящим для пользовательского интерфейса (например, всплытие окна с сообщением, печать в stderr, печать в лог--файл, или посылка сообщения администратору).
+\end{enumerate}
+
+\label{errorReportFunction}
+Для этой цели предлагается определить стандартную библиотечную функцию, с именем error\_message. Все каркасы пользовательского интерфейса обязаны определять эту функцию. Возможен автоматический выбор различных версий этой функции во время выполнения, в зависимости от настроек системы, используя диспетчеризацию, описанную на с.~\pageref{libraryFunctionDispatchSystem}. Головная программа может перекрывать эту функцию, определяя свою собственную функцию с тем же именем.
+
+Функция  error\_message обязана иметь следующие параметры: числовой код ошибки; указатель на строку, предоставляющую сообщение об ошибке; и указатель на другую строку, дающую имя функции, в которой возникла ошибка. Эти строки представляют собой завершающиеся нулём строки, в кодировке UTF-8. Сообщение об ошибке --- по умолчанию на английском языке. Поддержки многих разных языков (см.  \href{https://en.wikibooks.org/wiki/Usability_for_Nerds/Software/Internationalization}{эту ссылку} по поводу обсуждения проблем с интернационализацией) требовать неразумно. Вместо этого руководство на желаемом языке может содержать список кодов ошибок.
+
+Строка сообщения об ошибке может включать числовые значения и диагностические сведения, такие, как значение параметра, находящегося вне диапазона.
+
+Функция error\_message может возвращать управление, а может и не возвращать. Если она возвращает управление, то вызвавшая функция обязана изящно вернуть управление. Как вариант, функция error\_message может завершить приложение, либо может возбудить исключение или ловушку, которые обрабатываются операционной системой, в случае, если исключение не перехвачено программой.
 \end{document}
