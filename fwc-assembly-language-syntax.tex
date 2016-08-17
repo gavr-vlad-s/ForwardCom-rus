@@ -1,52 +1,40 @@
 % chapter included in forwardcom.tex
 \documentclass[forwardcom.tex]{subfiles}
 \begin{document}
-\RaggedRight
+\section{Синтаксис языка ассемблера} \label{assemblySyntax}
+В определение нового набора команд следует включать определение стандартизированного синтаксиса языка ассемблера. Синтаксису следует быть подходящим для обработки человеком, а не только машиной. Мнемоническим именам следует быть достаточно длинными, чтобы иметь смысл. Командам следует иметь операнд--приёмник в качестве первого операнда. Мы обязательно должны избегать ситуаций, схожих с x86, когда используется много разных синтаксисов, с разными именами команд и разным порядком операндов.
 
+Ассемблерный код имеет в каждой строке одну команду, состоящую из мнемоники команды и её операндов. Предлагается, для указания типа операндов, приписывать к именам команд суффикс, отделённый от имени точкой:  8, 16, 32, 64, 128 для размера целочисленных операндов, и f, d, q для вещественных операндов одинарной, двойной, и четырёхкратной точности. Добавляйте к типу целочисленного операнда 'z', если результат обязательно должен расширяться нулём до 64--разрядного регистра общего назначения. Без 'z' ассемблер подберёт самую короткую команду, независимо от того, может ли произойти переполнение результата в дополнительных разрядах. Например, add.16 r0,r0,1 может использовать малую команду с 64--разрядным типом операнда, и в которой может за пределами 16 разрядов произойти переполнение, тогда как add.16z r0,r0,1 обязательно должна использовать команду с 16--разрядным типом операнда, гарантируя, что оставшиеся разряды регистра общего назначения будут нулями.
 
-\section{Assembly language syntax} \label{assemblySyntax}
-The definition of a new instruction set should include the definition of a standardized assembly language syntax. The syntax should be suitable for human processing, not only for machine processing. Mnemonic names should be long enough to make sense. Instructions should have the destination operand first. We must avoid a situation similar to the x86 environment where many different syntaxes are in use, with different instruction names and different orders of the operands. 
-\vspace{2mm}
-
-The assembly code has one instruction on each line, consisting of an instruction mnemonic and its operands. 
-It is proposed to add suffix codes to instruction mnemonics, separated by a dot, to indicate the operand type: 8, 16, 32, 64, 128 for integer operand size, and f, d, q for single, double and quadruple precision floating point operands. Add a 'z' to the integer operand type if the result must be zero-extended into a 64-bit general purpose register. Without the 'z', the assembler will pick the shortest instruction regardless of whether the result may overflow into additional bits. For example, add.16 r0,r0,1 may use a tiny instruction with 64 bit operand type that can overflow beyond 16 bits, while add.16z r0,r0,1 must use an instruction with a 16-bit operand type to make sure that the remaining bits of the general purpose register will be zero. 
-\vspace{2mm}
-
-Memory operands are indicated with square brackets. The vector length specifier of a memory operand is indicated as ``, length=register'' after the address operand. A mask register is indicated as ``, mask=register''. Example: 
-\begin{lstlisting}
+Находящийся в памяти операнд указывается в квадратных скобках. Значение длины вектора для находящегося в памяти операнда указывается как \glqq, length=регистр\grqq, после адреса операнда. Регистр маски указывается как \glqq, mask=регистр\grqq. Пример:
+\begin{verbatim}
    add.f v0, v1, [r2+0x100, length=r3], mask=v4
-\end{lstlisting}
+\end{verbatim}
+Здесь будет сложены вещественный вектор v1 и находящийся в памяти вектор, имеющий указатель r2, смещение 0x100, и длину (в байтах) в r3, а результат будет сохранён в v0, используя маску v4. 
 
-This will add the float vector v1 and the vector memory operand with pointer r2, offset 0x100 and length r3 (bytes) and save the result in v0, using mask v4. 
-\vspace{2mm}
-
-An array operand is indicated as ``(base register)+(index register)*(scale factor)''. If there is a scale factor ($\neq \pm$ 1) then the scale factor must match the operand size indicated by the operand type suffix. A limit to the index is indicated with \\
-``, limit=value''. Example:
-\begin{lstlisting}
+Операнд--массив указывается как
+$$
+\texttt{(базовый регистр)+(индексный регистр)*(масштабирующий множитель)}.
+$$
+Если имеется $\text{(масштабирующий множитель)}\neq\pm1$, то масштабирующий множитель обязательно должен совпадать с размером операнда, указанным суффиксом типа операнда. Лимит на индекс указывается в виде \glqq, limit=значение\grqq. Пример:
+\begin{verbatim}
    add.64 r0, r1, [r2+r3*8, limit=999], mask=r4
-\end{lstlisting}
+\end{verbatim}
+Здесь из массива в 1000 элементов, с базовым адресом r2 и индексом r3, который масштабируется на размер операнда (64 разряда = 8 байт), с лимитом индекса r3 $\leq$ 999, загружается 64--разрядное целое, складывается со значением в r1, а результат сохраняется в r0, используя маску из r4.
 
-This will load a 64-bit integer from an array of 1000 elements with base address r2 and index r3, where the index is scaled by the operand size (64 bits = 8 bytes), with a limit of r3 $\leq$ 999, add the loaded number with the value of r1 and store the result in r0, using mask r4.
-\vspace{2mm}
-
-The same instruction may alternatively be written in the style of a function: 
-\begin{lstlisting}
+Ту же команду можно записать иначе, в стиле функции: 
+\begin{verbatim}
    r0 = add.64 (r1, [r2+r3*8, limit=999], mask=r4)
-\end{lstlisting}
+\end{verbatim}
 
-Move instructions may conveniently be written simply with an equal sign, for example:
-\begin{lstlisting}
-   r0 = r1              ; copy general purpose register
-   r2 = 0xFFFF          ; set general purpose register to constant
-   v3 = [r4, length=r5] ; read memory operand into vector register
-\end{lstlisting}
+Команды пересылки могут быть удобно записаны просто через знак равенства, например
+\begin{verbatim}
+   r0 = r1              ; копировать регистр общего назначения
+   r2 = 0xFFFF          ; установить регистр общего назначения равным константе
+   v3 = [r4, length=r5] ; прочесть находящийся в памяти операнд в векторный регистр
+\end{verbatim}
 
-Comments are indicated with a semicolon or a double slash.
-\vspace{2mm}
+Комментарии указываются через точку с запятой или двойной слэш.
 
-Traditional assemblers often have metaprogramming features such as macros, preprocessing conditionals and preprocessing loops. The syntaxes used for these features look like awkward ad hoc solutions without no overall logical structure. We would prefer a syntax that makes a clear distinction between metaprogramming and regular assembly code. The metaprogramming syntax should support integer and floating point variables, strings, macros, conditionals and loops in a way that resembles a structured programming language. 
-\vspace{2mm}
-
-
-
+У традиционных ассемблеров часто имеются возможности для метапрограммирования, такие, как макросы, условные операторы препроцессора, и циклы препроцессора. Синтаксисы, используемые для этих возможностей, выглядят подобно несуразным специально придуманным решениям, без общей логической структуры. Мы бы предпочли синтаксис, делающий ясным различие между метапрограммированием и обычным ассемблерным кодом. В синтаксисе метапрограммирования следует поддерживать целочисленные и вещественные переменные, строки, макросы, условные операторы, и циклы, способом, напоминающим язык структурированного программирования.
 \end{document}
