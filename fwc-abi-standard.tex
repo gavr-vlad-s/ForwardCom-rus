@@ -2,206 +2,154 @@
 \documentclass[forwardcom.tex]{subfiles}
 \begin{document}
 \chapter{Стандартизация ABI и программной экосистемы} \label{StandardizationOfAbi}
-%The goal of ForwardCom is a vertical redesign that defines new standards not only for the instruction set, but also for the software that uses it. This will have the following advantages.
-%
-%\begin{itemize}
-%\item Different compilers will be compatible. The same function libraries can be used with different compilers. 
-%
-%\item Different programming languages will be compatible. It will be possible to compile different parts of a program in different programming languages. It will be possible to compile a function library in a programming language different from the program that uses it. 
-%
-%\item Debuggers, profilers and other development tools will be compatible. 
-%
-%\item Different operating systems will be compatible. It will be possible to use the same function libraries in different operating systems, except if they use system-specific functions. 
-%\end{itemize}
-%
-%The previous chapter described standardization of system calls, system functions, and error messaging. The present chapter discusses standardization of the following aspects of the software ecosystem. 
-%
-%\begin{itemize}
-%\item Compiler support. 
-%
-%\item Binary data representation. 
-%
-%\item Function calling conventions. 
-%
-%\item Register usage conventions.
-%
-%\item Name mangling for function overloading
-%
-%\item Binary format for object files and executable files.
-%
-%\item Format and link methods for function libraries.
-%
-%\item Exception handling and stack unrolling.
-%
-%\item Debug information.
-%
-%\item Assembly language syntax. 
-%
-%\end{itemize}
-%
-%\section{Compiler support} \label{compilerSupport}
-%Compilers can have three different levels of support for variable-length vector registers. 
-%
-%\subsubsection{Level 1}
-%The compiler will not use variable-length vectors. The compiler can call a vector function in a function library with a scalar parameter if the function is not available in a scalar version. 
-%
-%\subsubsection{Level 2}
-%The compiler can call vector functions, but not generate such functions. The compiler can vectorize a loop automatically and call a vector library function from such a loop. 
-%
-%\subsubsection{Level 3}
-%Full support. The compiler supports data types for variable-length vectors. These data types can be used for variables, function parameters and function returns. Variable-length vectors can not be included in structures, classes or unions because such composite types must have known sizes. Support for variable-length vectors in static and global variables is optional.
-%\vspace{2mm}
-%General operations on variable-length vectors can be specified explicitly, including options for applying boolean vector masks.
-%
-%\subsubsection{Other compiler features}
-%The compiler may support pointer arithmetic on function pointers in order to write compact call tables with relative addresses explicitly. The difference between two function pointers should be scaled by the code word size, which is 4. Without this feature, the function pointers have to be type cast to integer pointers and back again. 
-%
-%\vspace{2mm}
-%The compiler may have support for detecting integer and floating point overflow and other numerical errors in try-catch blocks using one of the methods discussed on page \pageref{integerOverflowDetection}.
-%
-%\vspace{2mm}
-%The compiler may support array bounds checking, using the indexed addressing mode with bounds or the conditional trap instruction. 
-%
-%\section{Binary data representation} \label{binaryDataRepresentation}
-%Data are stored in little-endian form in RAM memory. See page \pageref{endianness} for the rationale. 
-%\vspace{2mm}
-%
-%Integer variables are represented with 8, 16, 32, 64, and optionally 128 bits, signed and unsigned. Signed integers use 2's complement representation. Integer overflow wraps around, except in saturated arithmetic instructions. 
-%\vspace{2mm}
-%
-%Floating point numbers are coded with single (32-bit), double (64-bit) and optionally quadruple (128-bit) precision, following the IEEE Standard 754-2008 or any later standard. Half precision (16-bit) is optionally used in immediate constants. Calculation on half precision is not supported, but conversion between half and single precision is optionally supported. 
-%\vspace{2mm}
-%
-%Floating point NAN variables can contain diagnostic information about the cause of errors as discussed on page \pageref{nanPropagation}. 
-%\vspace{2mm}
-%
-%Boolean variables are stored as integers of at least 8 bits with the values 0 and 1 for FALSE and TRUE. Only bit 0 of the boolean variable is used, while the other bits are ignored. This rule makes it possible to use boolean variables as masks and to implement boolean functions such as AND, OR, XOR, and NOT in an efficient way with simple bitwise instructions, rather than the method used in many current systems that have a branch for each variable to check if the whole integer is nonzero. A branch instruction is needed in the compilation of expressions like (A \&\& B) and (A \textbar\textbar{} B) only if the evaluation of B has side effects. 
-%\vspace{2mm}
-%
-%All variables not bigger than 8 bytes should be kept at their natural alignment.
-%\vspace{2mm}
-%
-%Arrays not smaller than 8 bytes must be aligned to addresses divisible by 8. It may be recommended to align large arrays by the cache line size. 
-%\vspace{2mm}
-%
-%Multidimensional arrays are stored in row-major order, except where the programming language makes this impossible. 
-%\vspace{2mm}
-%
-%Text strings may be stored in language-dependent forms, but a standardized form is needed for system functions and for functions that are intended to be compatible with all programming languages. The proposed standard uses UTF-8 encoding. The length of the string may be determined by a terminating zero or a length specifier, or both.
-%The rationale is this. The CPU processing time is insignificant for text strings of a length suitable for human reading. The priority is therefore on compactness. Compactness matters if the string is stored in a file or transmitted over a network. UTF-8 is more compact than UTF-16 in most cases, though less compact for some Asian languages. UTF-8 is the most common encoding used on the Internet.
-%
-%\section{Further conventions for object-oriented languages}
-%Object oriented languages require further standards for the binary representation of special features such as virtual function tables, runtime type identification, member pointers, etc. 
-%\vspace{2mm}
-%
-%These details must be standardized within each programming language for the sake of compatibility between different compilers, and if possible also between different programming languages that have compatible features. 
-%\vspace{2mm}
-%
-%Member pointers should be implemented in a way that prioritizes good performance in the general case where only a simple offset (to data) or a pointer (to a function) is required, while additional information for contrived cases of multiple inheritance is added only when needed. 
-%
-%\section{Function calling convention} \label{functionCallingConventions}
-%Function calls will use registers for parameters as much as possible. Integers of up to 64 bits, pointers, references, and boolean scalars are transferred in general purpose registers. Vector parameters can have variable length. Floating point scalars, vectors of any type with a fixed length of up to 16 bytes, and vectors of variable length are transferred in vector registers. 
-%\vspace{2mm}
-%
-%The first 16 parameters to a function that fit into a general purpose register are transferred in register r0 – r15. The first 16 parameters that fit into a vector register are transferred in v0 – v15. The length of a variable-length vector parameter is contained in the same vector register that contains the data. 
-%\vspace{2mm}
-%
-%Composite types are transferred in vector registers if they can be considered "simple tuples" no bigger than 16 bytes. A simple tuple is a structure or class or encapsulated array for which all non-static elements have the same type, which is not a pointer. A union is treated as a structure according to its first element. 
-%\vspace{2mm}
-%
-%Parameters that do not fit into a single register are transferred by a pointer to a memory object allocated by the caller. This applies to: structures and classes with elements of different types, or bigger than 16 bytes. It also applies to objects that require special handling such as a non-standard copy constructor or destructor, and objects that require extra implicit storage such as tables of virtual member functions. It is the responsibility of the caller to call any copy constructor and destructor.
-%\vspace{2mm}
-%
-%If there are not enough registers for all parameters then the additional parameters are provided in a list, which can be stored anywhere in memory. A pointer to this parameter list is transferred in a general purpose register. Such a list is also used if there is a variable argument list. There can be no more than one parameter list, as the same list is used for all purposes. 
-%\vspace{2mm}
-%
-%The rules for a parameter list are as follows. A parameter list is used if there are more than 16 parameters that fit into a general purpose register, if there are more than 16 parameters that fit into a vector register, or if there is a variable argument list. If there are less than 16 general purpose parameters then these parameters are put in general purpose registers, and the next vacant general purpose register is used as pointer to the list. If there are 16 or more general purpose parameters, and a parameter list is needed for any reason, then the first 15 general purpose parameters are put in r0-r14, the list pointer is in r15, and the remaining general purpose parameters are put in the list. If there are more than 16 vector parameters then the first 16 vector parameters are put in v0-v15 and the remaining vector parameters are put in the list. All parameters in the list are placed in the order that they appear in the function definition, regardless of type. Variable arguments are placed last in the list because they always appear last in a function definition. 
-%\vspace{2mm}
-%
-%The list consists of entries of 8 bytes each. A general purpose parameter uses one entry. A vector parameter with a constant size of 8 bytes or less uses one entry. A vector parameter with a constant size of more than 8 bytes or a variable size uses two entries in the list. The first entry is the length (in bytes) and the second entry is a pointer to an array containing the vector. A parameter that would not fit into a register, if one was vacant, is transferred by a pointer in the list according to the same rules as if the pointer was in a register. 
-%\vspace{2mm}
-%
-%The parameter list belongs to the called function in the sense that it is allowed to modify parameters in the list if they are not declared as constant parameters. The same applies to arrays and objects with a pointer in the list. The caller can rely on parameters in the list being unchanged only if they are declared constant. The caller must put the list in a place where it cannot be modified by other threads. 
-%\vspace{2mm}
-%
-%The function return value is in r0 or v0, using the same rules as for function parameters. Multiple return values (if allowed by the programming language) are treated as tuples if possible and returned in v0. Multiple return values of different types may be returned in multiple registers, but it is generally preferred to treat multiple return values as a structure for the sake of compatibility with other programming languages that do not allow multiple return values. 
-%\vspace{2mm}
-%
-%A return value that does not fit into a register is returned in a space allocated by the caller through a pointer transferred by the caller in r0 and returned in r0. Any constructor is called by the callee. 
-%\vspace{2mm}
-%
-%A ``this'' pointer for a class member function is transferred in r0, except if r0 is used for a return object, where the ``this'' pointer is transferred in r1. 
-%
-%\subsubsection{Rationale}
-%It is much more efficient to transfer parameters in registers than on the stack. The present proposal allows up to 32 parameters, including variable length vectors, to be transferred in registers, leaving 15 general purpose registers and 16 vector registers for the function to use for other purposes while handing the parameters. This will cover almost all practical cases, so that parameters only rarely need to be stored in memory. 
-%\vspace{2mm}
-%
-%Nevertheless, we must have precise rules for covering an unlimited number of parameters if the programming language has no limit to the number of parameters. We are putting any extra parameters in a list rather than on the stack as most other systems do. The main reason for this is to make the software independent of whether there is a separate call stack or the same stack is used for return addresses and local variables. The addresses of parameters on the stack would depend on whether there is a return address on the same stack. The list method has further advantages. There will be no disagreement over the order of parameters on the stack and whether the stack should be cleaned up by the caller or the callee. The list can be reused by the caller for multiple calls if the parameters are constant, and the called function can reuse a variable argument list by forwarding it to another function. The function is guaranteed to return properly without messing up the stack even if caller and callee disagree on the number of parameters. Tail calls are possible in all cases regardless of the number and types of parameters. 
-%\vspace{2mm}
-%
-%\section{Register usage convention} \label{registerUsageConvention}
-%Most systems have rules that certain registers have callee-save status. This means that a function must save these registers and restore them before it returns, if they are used. The caller can then rely on these registers being unchanged after the function call.
-%\vspace{2mm}
-%
-%Current systems have a problem with assigning callee-save status to vector registers. Future CPU versions may make the vector registers longer, and the instructions for saving the longer registers have not been defined yet. Some systems now have callee-save status on part of a vector register because of poor foresight. It is impossible in current systems to save a vector register in a way that will be compatible with future extensions. 
-%\vspace{2mm}
-%
-%This problem is solved by the ForwardCom design with variable vector length. It is possible to save and restore a vector register of any length, even if this length was not supported at the time the code was compiled. It is also possible to know how much of a long vector register is actually used, because the length of a vector is saved in the register itself, so that we only need to save the part of the register that is actually used. The save\_cp and restore\_cp instructions are designed for this purpose (see page \pageref{saveRestoreVectorRegisters}). Unused vector registers will use only little space for saving. 
-%\vspace{2mm}
-%
-%It still takes a lot of cache space to save the vector registers if they are long. Therefore, we want to minimize the need for saving registers. It is proposed to have two different methods to choose between. These methods are explained here. 
-%
-%\subsubsection{Method 1}
-%This is the default method which can be used in all cases, but not the most efficient method. 
-%\vspace{2mm}
-%
-%The rule is simply that registers r16 – r31 and v16 – v31 have callee-save status.
-%\vspace{2mm}
-%
-%A function can use registers r0 – r15 and v0 – v15 freely. Sixteen registers of each type will be sufficient for most functions. If the function needs additional registers, it must save them. 
-%\vspace{2mm}
-%
-%All system registers and special registers have callee-save status, except in functions that are intended for manipulating these registers.
-%
-%\subsubsection{Method 2}
-%It will be more efficient if we actually know which registers are used by each function. If function A calls function B, and A knows which registers are used by B, then A can simply choose some registers that are not used by B for any data that it needs to save across the call to B. Even a long chain of nested function calls can avoid the need to save any registers as long as there are enough registers. 
-%\vspace{2mm}
-%
-%If function A and B are compiled together in the same process then the compiler can easily manage this information. But if A and B are compiled separately, then we need to store the necessary information about which registers are used. This is possible with the object file format described on page \pageref{objectFileFormat}. The information about register use must be saved in the compiled object file or library file, not in some other file that could possibly come out of sync. 
-%\vspace{2mm}
-%
-%Function B is preferably compiled first into an object file. This object file must contain information about which registers are modified by function B. The necessary information is simply a 64-bit number with one bit for each register that is modified (bit 0-31 for r0-r31, and bit 32-63 for v0-v31). Any registers used for parameters and return value are also marked if they are modified by the function.
-%\vspace{2mm}
-%
-%When function A is compiled next, the compiler will look in the object file for B to see which registers it modifies. The compiler will choose some registers not modified by B for data that need to be saved across the call to B. Registers that are modified by B can advantageously be used in A for temporary variables that do not need to be saved across the call to B. Likewise, it will be advantageous to use the same register for multiple temporary variables if their live ranges do not overlap, in order to modify as few registers as possible. The object file for A will contain a list of registers modified by A, including all registers modified by B and by any other function that A may call. The object file for A contains a reference to function B. This reference must contain information about which registers A expects B to modify. If B is later recompiled, and the new version of B modifies more registers, then the linker will detect the discrepancy and prompt for a recompilation of A.
-%\vspace{2mm}
-%
-%If, for some reason, A is compiled before B or no information is available about B when A is compiled, then the compiler will have to make assumptions about the register use of B. The default assumption is as specified in method 1. Function A may later be recompiled if B violates these assumptions, or simply to improve efficiency. 
-%\vspace{2mm}
-%
-%If two functions A and B are mutually calling each other then the easiest solution is to rely on method 1. The functions should still include the information about register use in their object files. 
-%\vspace{2mm}
-%
-%The compiler should preferentially allocate the lower registers first in order to minimize the problem that different library functions use different registers. It may optionally skip r7 and v7 for the caller to use for masks. 
-%\vspace{2mm}
-%
-%The main program function is allowed to use method 2 and to modify all registers if it includes the necessary information in its object file. 
-%\vspace{2mm}
-%
-%Object files that are contained in a function library must include the information about register use. 
-%\vspace{2mm}
-%
-%System functions and device drivers cannot be accessed in the same way as normal library functions (see page \pageref{systemCallIDSystem}). System functions must obey the rules for method 2, but the system should provide a method for getting information about the register use of each system function. This can be useful for just-in-time compilers. 
-%
-%\section{Name mangling for function overloading} \label{nameMangling}
-%Programming languages that support function overloading use internal names with prefixes and suffixes on the function names in order to distinguish between functions with the same name but different parameters or different classes or namespaces. Many different name mangling schemes are in use, and some are undocumented. It is necessary to standardize the name mangling scheme in order to make it possible to mix different compilers or different programming languages.
-%\vspace{2mm}
-%
-%The most common name mangling schemes are Microsoft and Gnu. The Microsoft scheme uses characters that cannot occur in function names (?@\$). This prevents name clashes, but makes it impossible to call the mangled name directly or to translate e. g. C++ to C. The Gnu scheme generates mangled names that look unwieldy, but contain no special characters that prevent calling the mangled name directly. Therefore, the proposal is to use the Gnu mangling scheme (version 4 or later) with necessary additions for variable-length vectors, etc. 
-%\vspace{2mm}
-%
-%Functions with mangled names may optionally supplement the mangled name with the simple (non-mangled) name as a weak public alias in the object file. This makes it easier to call the function from other programming languages without name mangling. The weak linking of the alias prevents the linker from making error messages for duplicate names, unless a call to the name is ambiguous. 
-%
-%% This chapter continues in the file
-%% fwc_assembly_language_syntax.tex
+Цель ForwardCom --- вертикальное перепроектирование, определяющее новые стандарты, не только для набора команд, но также и для использующего его программного обеспечения, что будет иметь следующие преимущества.
+\begin{itemize}
+\item Будут совместимы разные компиляторы. Одни и те же библиотеки функций смогут использоваться с разными компиляторами.
+
+\item Будут совместимы разные языки программирования. Будет возможной компиляция разных частей программы на разных языках программирования. Будет возможной компиляция библиотеки функций на языке программирования, отличающемся от использующей её программы.
+
+\item Будут совместимы отладчики, профилировщики, и другие средства разработки.
+
+\item Будут совместимы разные операционные системы. Будет возможным использование одних и тех же библиотек функций в разных операционных системах, за исключением случая использования специфичных для системы функций.
+\end{itemize}
+
+В предыдущей главе была описана стандартизация системных вызовов, системных функций, и сообщений об ошибках. В настоящей главе обсуждается стандартизация следующих аспектов программной экосистемы.
+\begin{itemize}
+\item Поддержка компилятором.
+
+\item Представление двоичных данных.
+
+\item Соглашения вызова для функций. 
+
+\item Соглашения об использовании регистров.
+
+\item Искажение имён для перегрузки функций.
+
+\item Двоичный формат объектных файлов и исполняемых файлов.
+
+\item Формат и методы компоновки для библиотек функций.
+
+\item Обработка исключений и раскрутка стека.
+
+\item Отладочная информация.
+
+\item Синтаксис языка ассемблера.
+\end{itemize}
+
+\section{Поддержка компилятором} \label{compilerSupport}
+Компилятор может иметь три разных уровня поддержки векторных регистров переменной длины. 
+
+\subsubsection{Уровень 1}
+Компилятор не будет использовать векторы переменной длины. Компилятор может вызывать векторную функцию, находящуюся в библиотеке функций, со скалярным параметром, если в скалярной версии функция недоступна.
+
+\subsubsection{Уровень 2}
+Компилятор может вызывать векторные функции, но не порождать такие функции. Компилятор может автоматически векторизовать цикл и вызывать векторную библиотечную функцию из такого цикла. 
+
+\subsubsection{Уровень 3}
+Полная поддержка. Компилятор поддерживает типы данных для векторов переменной длины. Эти типы данных могут использоваться для переменных, параметров функций, и возвращаемых функциями значений. Векторы переменной длины не могут включаться в структуры, классы, или объединения, поскольку такие составные типы должны иметь известные размеры. Поддержка векторов переменной длины в статических и глобальных переменных --- необязательна. Общие операции над векторами переменной длины могут указываться явно, включая опции для применения булевых векторных масок.
+
+\subsubsection{Другие качества компилятора}
+Компилятор может поддерживать арифметику указателей для указателей на функции, чтобы явно писать компактные таблицы вызовов с относительными адресами. Разность между двумя указателями на функции следует умножать на размер слова кода, равный 4 байтам. Без этой возможности указатели на функции должны приводиться к типу целочисленных указателей, и обратно.
+
+Компилятор может иметь поддержку обнаружения целочисленного и вещественного переполнений, и других численных ошибок, в блоках try--catch, используя один из методов, обсуждённых на с.~\pageref{integerOverflowDetection}.
+
+Компилятор может поддерживать проверку границ массивов, используя индексный адресный режим с границами или команду условной ловушки.
+
+\section{Представление двоичных данных} \label{binaryDataRepresentation}
+Данные в ОЗУ хранятся в формате с прямым порядком байтов. По поводу обоснования см. с.~\pageref{endianness}.
+
+Целочисленные переменные представляются 8, 16, 32, 64, и, необязательно, 128 разрядами, знаковые и беззнаковые. Знаковые целые числа используют представление в виде дополнения до двух. Целочисленное переполнение приводит к заворачиванию, за исключением команд для арифметики с насыщением.
+
+Вещественные числа кодируются с одинарной (32 разряда), двойной (64 разряда), и, необязательно, четырёхкратной (128 разрядов) точностью, следуя стандарту IEEE Standard 754-2008 или более позднему. Половинная точность (16 разрядов) необязательна, и используется в непосредственно заданных константах. Вычисления с половинной точностью не поддерживаются, но преобразования между половинной и одинарной точностью --- (необязательно) поддерживаются.
+
+Как обсуждалось на с.~\pageref{nanPropagation}, вещественные переменные со значениями NAN могут содержать диагностические сведения о том, что вызвало ошибку.
+
+Логические переменные хранятся как целые числа, по меньшей мере 8--разрядные, со значениями 0 и 1 для FALSE и TRUE. У логической переменной используется только разряд №0, тогда как другие разряды игнорируются. Это правило делает возможным использование логических переменных в качестве масок, и для реализации логических функций, таких, как И, ИЛИ, ИСКЛЮЧАЮЩЕЕ ИЛИ, и НЕ, с помощью простых поразрядных команд, а не с помощью метода, используемого во многих нынешних системах, имеющих ветвление для каждой проверки переменной, если всё целое число --- не ноль. Команда ветвления нужна при компиляции выражений вида (A \&\& B) и (A \textbar\textbar{} B), только если вычисление B имеет побочные эффекты.
+
+Все переменные, размер которых не более 8 байт, следует хранить, используя их естественное выравнивание.
+
+Массивы, размер которых не меньше 8 байт, обязаны храниться по адресам, кратным 8. Можно рекомендовать выравнивать большие массивы на размер строки кэша.
+
+Многомерные массивы хранятся по строкам, за исключением тех языков программирования, которые делают это невозможным.
+
+Текстовые строки могут храниться в зависящей от языка форме, но для системных функций и для функций, предназначенных для совместимости со всеми языками программирования, необходима стандартизированная форма. Предлагаемый стандарт использует кодировку UTF-8. Длина строки может определяться завершающим нулём, спецификатором длины, или и тем, и другим. Обоснование таково. Для текстовых строк, подходящих для чтения человеком, время обработки процессором в большинстве случаев несущественно, хотя менее компактно для некоторых азиатских языков. UTF-8 --- наиболее широко используемая в интернете кодировка.
+
+\section{Дальнейшие соглашения для объектно--ориентированных языков}
+Объектно--ориентированные языки требуют дальнейших стандартов, для двоичного представления специальных черт, таких, как таблицы виртуальных функций, определение типа во время выполнения, и т.п.
+
+Эти детали обязательно должны быть стандартизированы в рамках каждого языка программирования, ради совместимости разных компиляторов, и, если возможно, также разных языков программирования, имеющих совместимые свойства.
+
+Указатели на члены следует реализовывать способом, для которого важнее хорошая производительность в общем случае, когда требуется лишь простое смещение (для данных) или простой указатель (для функции), тогда как дополнительные сведения для запутанного случая множественного наследования добавляются только тогда, когда это необходимо.
+
+\section{Соглашения о вызовах функций} \label{functionCallingConventions}
+Вызовы функций будут использовать регистры для параметров, насколько это вообще возможно. Целые числа размером до 64 разрядов, указатели, ссылки, и булевы скаляры передаются в регистрах общего назначения. Векторные параметры могут иметь переменную длину. Вещественные скаляры, векторы с элементами любого типа, имеющие фиксированную длину, вплоть до 16 байт, и векторы переменной длины передаются в векторных регистрах.
+
+Первые 16 параметров функции, помещающиеся регистры общего назначения, передаются в регистрах r0--r15. Первые 16 параметров, помещающиеся в векторные регистры, передаются в регистрах v0--v15. Длина векторного параметра переменной длины содержится в том же векторном регистре, который содержит данные.
+
+Составные типы передаются в векторных регистрах, если их можно рассматривать как \glqq простые кортежи\grqq, размером не более 16 байт. Простой кортеж --- это структура или класс, или инкапсулированный массив, для которого все элементы имеют один и тот же тип, не являющийся указателем. Объединение трактуется как структура, соответствующая своему первому элементу.
+
+Параметры, не помещающиеся в один регистр, передаётся через указатель на находящийся в памяти объект, память под который выделена вызывающим. Это применимо к структура  и классам с элементами разных типов, или имеющим размер, больший 16 байт, а также применимо к объектам, требующим специальной обработки, такой, как нестандартные копирующий конструктор или деструктор, и к объектам, требующим дополнительной неявной памяти, таким, как виртуальные функции--члены. Вызов любого копирующего конструктора или деструктора --- дело вызывающего.
+
+Если для всех параметров не хватает регистров, то дополнительные параметры предоставляются в виде списка, который может храниться где--то в памяти. Указатель на этот список параметров передаётся в регистре общего назначения. Такой список также используется, если список параметров имеет переменную длину. Более одного списка параметров быть не может, поскольку один и тот же список используется для всех целей.
+
+Правила для списка параметров следующие. Список параметров используется, если имеется более 16 параметров, помещающихся в регистры общего назначения; если имеется более 16 параметров, помещающихся в векторные регистры; или список параметров имеет переменную длину. Если имеется менее 16  параметров, помещающихся в регистрах общего назначения, то эти параметры помещаются в регистры общего назначения, а следующий свободный регистр общего назначения используется как указатель на список параметров. Если имеется 16 или более параметров, помещающихся в регистрах общего назначения, и по какой--либо причине нужен список параметров, то первые 15 параметров, помещающихся в регистрах общего назначения, помещаются в r0--r14, указатель на список --- в r15, а оставшиеся параметры, помещающиеся в регистры общего назначения, --- помещаются в список. Если имеется более 16 векторных параметров, то первые 16 векторных параметров помещаются в v0-v15, а оставшиеся векторные параметры --- помещаются в список. Все параметры в список помещаются в том порядке, в каком появляются в определении функции, независимо от типа. Переменные аргументы помещаются в список последними, поскольку в определении функции всегда появляются последними.
+
+Список состоит из элементов, каждый из которых имеет размер 8 байт. Параметр, помещающийся в регистр общего назначения, использует один элемент. Векторный параметр, имеющий постоянную длину, не превосходящую 8 байт, использует один элемент. Векторный параметр, имеющий постоянную длину, большую 8 байт, или имеющий переменный размер, использует два элемента. Первый элемент --- длина (в байтах), а второй --- указатель на массив, содержащий вектор. Параметр, который не поместился бы в регистр, если бы таковой был свободен, передаётся в виде указателя на список, согласно тем же правилам, что и указатель, передаваемый в регистре. 
+
+Список параметров принадлежит вызванной функции, в том смысле, что ей разрешается модифицировать параметры списка, если они не описаны как константные. То же применимо к массивам и объектам с указателем в списке. Вызывающий может полагаться на неизменность параметров списка только в том случае, если они описаны как константные. Вызывающий не должен помещать список в месте, в котором он не может модифицироваться другими потоками.
+
+Возвращаемое функцией значение находится в r0 или v0, используя те же правила, что и для параметров функций. Множественные возвращаемые значения (если они допускаются языком программирования), если это возможно, трактуются как кортежи, и возвращаются в v0. Множественные возвращаемые значения разных типов могут возвращаться в нескольких регистрах, но, как правило, лучше трактовать множественные возвращаемые значения как структуру, ради совместимости с другими языками программирования, не позволяющими множественные возвращаемые значения.
+
+Возвращаемое значение, не помещающееся в регистр, возвращается в области, выделенном вызывающей функцией, через указатель, переданный вызывающей функцией в r0, и возвращаемый в r0. Любые конструкторы вызываются вызванной функцией.
+
+Указатель \glqq this\grqq\ для функции, являющейся членом класса, передаётся в r0, кроме случая, когда r0 используется для возвращаемого объекта. Тогда \glqq this\grqq\ передаётся в r1.  
+
+\subsubsection{Обоснование}
+Намного эффективнее передавать параметры в регистрах, чем через стек. Настоящее предложение позволяет вплоть до 32 параметров, включая векторы переменной длины, передавать в регистрах, оставляя 15 регистров общего назначения и 16 векторных регистров для использования функцией в других целях. Это охватывает почти все практические случаи, так что параметры редко потребуется хранить в памяти.
+
+Всё же у нас обязательно должны иметься точные правила для охвата неограниченного количества параметров, если в языке программирования нет ограничения на количество параметров. Мы помещаем любые дополнительные параметры в список, а не в стек, как делает большинство других систем. Основная причина этого состоит в том, чтобы сделать программное обеспечение независящим от того, есть ли отдельный стек вызова, или один и тот же стек используется и для адресов возврата, и для локальных переменных. Адреса параметров, расположенных в стеке, зависели бы от того, имеется ли в том же самом стеке адрес возврата, или нет. Метод списка имеет и другие преимущества. Не будет рассогласования порядка параметров в стеке и с тем, очищается ли стек вызывающей функцией или вызываемой. Список может повторно использоваться вызывающей функцией для многократных вызовов, если параметры являются константами, а вызываемая функция может повторно использовать список параметров переменной длины, передавая его в другую функцию. Гарантируется, что функция выполняет возврат управления должным образом, без порчи стека, даже если вызывающая и вызываемая функции не согласованы по количеству параметров. Хвостовые вызовы возможны во всех случаях, независимо от количества и типов параметров.
+
+\section{Соглашения об использовании регистров} \label{registerUsageConvention}
+У большинства систем имеются правила, гласящие, что некоторые регистры имеют статус сохраняемых вызываемой функцией. Это означает, что функция должна сохранять эти регистры и восстанавливать их перед возвратом управления, если они используются. Вызывающая функция может тогда полагаться на то, что эти регистры остаются неизменными после вызова функции.
+
+У нынешних систем имеется проблема с назначением статуса сохраняемых при вызове для векторных регистров. Последующие версии ЦП могут иметь более длинные векторные регистры, а команды сохранения более длинных регистров ещё не были определены. У некоторых систем теперь, из--за неудачного прогноза, есть статус сохраняемой при вызове для части векторного регистра. В имеющихся системах невозможно сохранять векторные регистры способом, который был бы совместим с последующими расширениями.
+
+В дизайне ForwardCom эта проблема решается с помощью векторов переменной длины. Можно сохранять и восстанавливать векторный регистр любой длины, даже если эта длина не поддерживалась на момент компиляции кода. Также можно узнать, насколько длинные векторные регистры используются на самом деле, поскольку длина вектора сохраняется в самом регистре, так что нам нужно сохранять лишь ту часть регистра, которая действительно используется. Для этой цели спроектированы команды save\_cp и restore\_cp (см. с.~\pageref{saveRestoreVectorRegisters}). Неиспользуемые векторные регистры для сохранения будут использовать лишь небольшое пространство.
+
+Для сохранения векторных регистров, если они длинны, всё ещё требуется много места в кэше. Следовательно, мы хотим минимизировать необходимость сохранения регистров. Предлагается иметь, на выбор, два разных метода сохранения, описываемых ниже.
+
+\subsubsection{Метод 1}
+Этот метод используется по умолчанию, может использоваться во всех случаях, но не самый эффективный. Правило простое: регистры r16--r31 и v16--v31 имеют статус сохраняемых при вызове.
+
+Функция может свободно использовать регистры r0--r15 и v0--v15. Шестнадцать регистров каждого типа --- достаточно для большинства функций. Если функции нужны дополнительные регистры, то она обязана их сохранять.
+
+Все системные регистры и специальные регистры имеют статус сохраняемых при вызове, исключая функции, предназначенные для манипулирования с этими регистрами.
+
+\subsubsection{Метод 2}
+Он будет более эффективным, если мы действительно знаем, какие регистры используются в каждой функции. Если функция A вызывает функцию B, и A знает, какие регистры использует B, то A может просто выбрать некоторые регистры, которые не используются функцией B, для любых данных, которые не должны изменяться после вызова функции B. Даже для длинной цепочки вложенных вызовов функций можно избежать необходимости в сохранении каких--либо регистров, до тех пор, пока регистров достаточно.
+
+Если функции A и B компилируются совместно, в одном и том же процессе, то компилятор легко может управлять этими сведениями. Но если A и B компилируются раздельно, то нам необходимо сохранять необходимые сведения о том, какие используются регистры, что возможно для формата объектных файлов, описанного на с.~\pageref{objectFileFormat}. Сведения об используемых регистрах обязательно должны сохраняться в откомпилированном объектном файле или файле библиотеки, а не в каком--либо ином файле, который мог бы быть и рассинхронизирован.
+
+Функцию B предпочтительнее откомпилировать в объектном файле первой. Этот объектный файл обязательно должен содержать сведения о том, какие регистры модифицируются функцией B. Необходимые сведения --- просто 64--разрядное число, с одним разрядом на каждый модифицируемый регистр (разряды №№0--31 --- для r0--r31, и разряды №№32--63 --- для v0--v31). Любые регистры, используемые для передачи параметров и возврата значения из функции, также помечаются, если они модифицируются функцией.
+
+Когда затем компилируется функция A, то компилятор просмотрит объектный файл для функции B, чтобы посмотреть, какие регистры та модифицирует. Компилятор выберет некоторые из регистров, не модифицируемых функцией B, для данных, которые не должны измениться после вызова функции B. Регистры, используемые функцией B, в функции A могут преимущественно использоваться для временных переменных, которые не нужно сохранять перед вызовом функции B. Подобным образом, будет выгодно использовать те же самые регистры для многих временных переменных, если их времена жизни не перекрываются, чтобы модифицировать как можно меньше регистров. Объектный файл для A будет содержать список регистров, модифицируемых функцией A, включая все регистры, модифицируемые функцией B, и любой другой функцией, которую может вызвать A. Объектный файл для A содержит ссылку на функцию B. Эта ссылка обязательно должна содержать сведения о том, какие регистры функция A ожидает модифицируемыми функцией B. Если B позднее перекомпилируется, и новая версия функции B модифицирует больше регистров, то компоновщик обнаружит нестыковку,  и сообщит о перекомпиляции функции A.
+
+Если, по какой--то причине, функция A компилируется перед функцией B, либо во время компиляции функции A сведения о B недоступны, то компилятор сделает предположения об использовании регистров функцией B. Предположение, принятое по умолчанию, указано в методе 1. Функция A может позднее перекомпилирована, если функция B не соответствует этим допущениям, или просто для улучшения эффективности.
+
+Если две функции, A и B, взаимно вызывают друг друга, то самым лёгким решением является положится на метод 1. Функциям, всё ещё, следует включать сведения об использовании регистров в свои объектные файлы.
+
+Компилятору следует предпочесть выделение сначала меньшего числа регистров, чтобы минимизировать проблему, заключающуюся в использовании разных регистров разными библиотечными функциями. Можно (не обязательно) в вызывающем пропустить r7 и v7, чтобы использовать для масок.
+
+Головной функции программы разрешается использовать метод 2, и модифицировать все регистры, если она включает необходимые сведения в свой объектный файл.
+
+Объектные файлы, содержащиеся в библиотеке функций, должны включать сведения об использовании регистров. 
+
+К системным функциям и драйверам устройств обращаться так же, как к нормальным библиотечным функциям, нельзя (см. с.~\pageref{systemCallIDSystem}). Системные функции обязаны подчиняться правилам метода 2, но системе следует предоставить метод получения сведений об использовании регистров каждой системной функцией, что может быть полезно для компиляции \glqq на лету\glqq.
+
+\section{Искажение имён для перегрузки функций} \label{nameMangling}
+Языки программирования, поддерживающие перегрузку функций, используют внутренние имена, с добавленными к именам функций префиксами и суффиксами, чтобы различать функции с одним и тем же именем, но разными параметрами или в разных классах, или в разных пространствах имён. Используется много разных схем искажения имён, и некоторые из них --- недокументированы. Необходимо стандартизировать схему искажения имён, чтобы сделать возможным смешивание разных компиляторов или разных языков программирования.
+
+Наиболее распространённые схемы искажения имён --- схемы Microsoft и Gnu. Схема  Microsoft использует символы, которые не могут встречаться в именах функций (?@\$), что предотвращает конфликты имён, но делает невозможным прямой вызов функции с искажённым именем, или трансляцию, например, C++ в C. Схема Gnu порождает искажённые имена, выглядящие неуклюже, но не содержащие специальных символов, мешающих непосредственному вызову искажённого имени. Следовательно, предложение состоит в использовании схемы искажения имён Gnu (версии 4 или более поздней), с необходимыми добавлениями для векторов переменной длины и т.п.
+
+Функции с искажёнными именами могут (не обязательно) дополнять искажённое имя простым (неискажённым) именем, в виде слабого публичного псевдонима в объектном файле. Это облегчит вызов функции из других языков программирования, в которых искажения имён нет. Слабая компоновка псевдонима предотвращает выдачу компоновщиком сообщений о дублирующихся именах, разве что вызов по имени неоднозначен.
 \end{document}
